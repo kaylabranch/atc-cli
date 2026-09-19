@@ -28,15 +28,12 @@ export function renderAirportLayout(runways: number, gates: number): string {
 
 export function renderGridPositions(flights: Flight[]): string {
   const cells = Array.from({ length: GRID_HEIGHT }, () => Array.from({ length: GRID_WIDTH }, () => ' '));
-  const markers = new Map<string, string>();
-  const usedMarkers = new Set(['X', '*']);
 
   const airportRow = Math.round((AIRPORT_Y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
   cells[airportRow][AIRPORT_X] = 'X';
 
-  for (const flight of flights) {
-    const marker = [...flight.callsign].reverse().find((character) => !usedMarkers.has(character)) ?? '?';
-    usedMarkers.add(marker);
+  for (const [index, flight] of flights.entries()) {
+    const marker = String(index + 1);
     const x = Math.max(0, Math.min(GRID_WIDTH - 1, Math.round(flight.x)));
     const y = Math.max(0, Math.min(GRID_MAX_COORDINATE, Math.round(flight.y)));
     const row = Math.round((y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
@@ -45,7 +42,6 @@ export function renderGridPositions(flights: Flight[]): string {
     } else if (cells[row][x] !== 'X') {
       cells[row][x] = '*';
     }
-    markers.set(marker, `${marker}=${flight.callsign}`);
   }
 
   const border = `    +${'-'.repeat(GRID_WIDTH)}+`;
@@ -57,26 +53,21 @@ export function renderGridPositions(flights: Flight[]): string {
   }
 
   gridLines.push(border, '      0         10        20        30');
-  gridLines.push(`Flights: ${Array.from(markers.values()).join(' | ') || 'none'}`);
 
   return gridLines.join('\n');
 }
 
 export function renderAltitudeChart(flights: Flight[]): string {
   const chart = Array.from({ length: ALTITUDE_CHART_HEIGHT }, () => Array.from({ length: ALTITUDE_CHART_WIDTH + 1 }, () => ' '));
-  const markers: string[] = [];
-  const usedMarkers = new Set(['*']);
 
-  for (const flight of flights) {
-    const marker = [...flight.callsign].reverse().find((character) => !usedMarkers.has(character)) ?? '?';
-    usedMarkers.add(marker);
+  for (const [index, flight] of flights.entries()) {
+    const marker = String(index + 1);
     const distance = Math.sqrt((flight.x - AIRPORT_X) ** 2 + (flight.y - AIRPORT_Y) ** 2);
     const chartDistance = Math.min(DISTANCE_CHART_MAX, Math.max(0, distance));
     const column = Math.round((chartDistance / DISTANCE_CHART_MAX) * ALTITUDE_CHART_WIDTH) + 1;
     const altitude = Math.min(ALTITUDE_CHART_MAX, Math.max(0, flight.altitude));
     const row = ALTITUDE_CHART_HEIGHT - 1 - Math.round((altitude / ALTITUDE_CHART_MAX) * (ALTITUDE_CHART_HEIGHT - 1));
     chart[row][column] = chart[row][column] === ' ' ? marker : '*';
-    markers.push(`${marker}=${flight.callsign} ${Math.round(flight.altitude)}ft/${Math.round(distance)}u`);
   }
 
   const lines = [bold('ALTITUDE CROSS-SECTION'), 'Height vs. distance from airport', `     ${'-'.repeat(ALTITUDE_CHART_WIDTH + 1)}`];
@@ -86,7 +77,6 @@ export function renderAltitudeChart(flights: Flight[]): string {
   }
   lines.push(`    0 +${'-'.repeat(ALTITUDE_CHART_WIDTH)}>`);
   lines.push('      0       5       10      15      20      25u');
-  lines.push(`Flights: ${markers.join(' | ') || 'none'}`);
 
   return lines.join('\n');
 }
@@ -113,11 +103,11 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     `${bold('ATC STATUS')}`,
     `${info(`Active flights: ${activeFlights}`)} | ${danger(`Needs attention: ${dangerFlights}`)} | ${success(`Completed: ${completedFlights}`)}`,
     '',
-    `${'CALLSIGN'.padEnd(10)} ${'STATE'.padEnd(12)} ${'ALT'.padStart(6)} ${'SPD'.padStart(6)} ${'HDG'.padStart(6)} ${'RWY'.padStart(6)} ${'GATE'.padStart(6)}`,
+    `${'(ALIAS) CALLSIGN'.padEnd(18)} ${'STATE'.padEnd(12)} ${'ALT'.padStart(6)} ${'SPD'.padStart(6)} ${'HDG'.padStart(6)} ${'RWY'.padStart(6)} ${'GATE'.padStart(6)}`,
     '-------------------------------------------------------------',
   ];
 
-  for (const flight of flights) {
+  for (const [index, flight] of flights.entries()) {
     const stateValue = flight.state.toUpperCase().padEnd(12);
     const stateText =
       flight.danger ? danger(stateValue) :
@@ -128,7 +118,7 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     const runwayText = (flight.runway ?? '-').padStart(6);
     const gateText = (flight.gate ?? '-').padStart(6);
     lines.push(
-      `${flight.callsign.padEnd(10)} ${stateText} ${String(Math.round(flight.altitude)).padStart(6)} ${String(Math.round(flight.speed)).padStart(6)} ${String(Math.round(flight.heading)).padStart(6)} ${runwayText} ${gateText}`
+      `${`(${index + 1}) ${flight.callsign}`.padEnd(18)} ${stateText} ${String(Math.round(flight.altitude)).padStart(6)} ${String(Math.round(flight.speed)).padStart(6)} ${String(Math.round(flight.heading)).padStart(5)} ${runwayText} ${gateText}`
     );
   }
 

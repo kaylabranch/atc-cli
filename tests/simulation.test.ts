@@ -89,7 +89,8 @@ describe('simulation behavior', () => {
     const board = sim.renderStatusBoard();
 
     expect(board).toContain('ATC STATUS');
-    expect(board).toContain('CALLSIGN');
+    expect(board).toContain('(ALIAS) CALLSIGN');
+    expect(board).toContain(`(1) ${sim.getFlights()[0].callsign}`);
     expect(board).not.toContain('PROGRESS');
   });
 
@@ -109,7 +110,7 @@ describe('simulation behavior', () => {
     expect(grid).toContain('GRID POSITIONS');
     expect(grid).toContain('Legend: X=airport, *=multiple flights');
     expect(grid).toContain('X');
-    expect(grid).toContain(flights[0].callsign);
+    expect(grid).toContain('1');
     expect(grid).toContain(`+${'-'.repeat(31)}+`);
   });
 
@@ -204,7 +205,7 @@ describe('simulation behavior', () => {
     expect(sim.handleCommand(`gate ${flight.callsign} A1`).ok).toBe(true);
     sim.step(2000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('taxiing');
-    expect(sim.getFlight(flight.callsign)?.statusMessage).toBe('Taxiing to gate A1');
+    expect(sim.getFlight(flight.callsign)?.gate).toBe('A1');
     sim.step(9999);
     expect(sim.getFlight(flight.callsign)?.state).toBe('taxiing');
     sim.step(1);
