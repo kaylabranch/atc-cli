@@ -33,6 +33,7 @@
 - There should be an indicator of the number of active flights in the simulation at any given time, and any flights needing attention or that have crashed should be clearly indicated to the user, as well as the number of flights completed.
 - `clear-to-land` starts a 15-second landing operation. The flight enters `landing` immediately, and altitude and speed decrease toward zero during the operation before it becomes `landed`.
 - A flight must have a completed runway assignment before `clear-to-land` is accepted.
+- A runway may be assigned to only one flight at a time. It is released when that flight begins taxiing to a gate and may then be reused.
 - `abort-landing` cancels an active landing and starts a climb/acceleration operation back toward the flight's pre-landing altitude and speed.
 - A landed flight assigned a gate enters `taxiing` for 10 seconds, then becomes `gated` and unloads passengers for 10 seconds before being removed from the simulation.
 - The game ends when all 3 starting flights are completed or crashed. A flight is completed only after it is removed from the board. New-flight generation is out of scope for now.

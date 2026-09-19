@@ -95,7 +95,7 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     const runwayText = (flight.runway ?? '-').padStart(6);
     const gateText = (flight.gate ?? '-').padStart(6);
     lines.push(
-      `${flight.callsign.padEnd(10)} ${stateText} ${String(Math.round(flight.altitude)).padStart(6)} ${String(Math.round(flight.speed)).padStart(6)} ${String(Math.round(flight.heading)).padStart(5)} ${runwayText} ${gateText}`
+      `${flight.callsign.padEnd(10)} ${stateText} ${String(Math.round(flight.altitude)).padStart(6)} ${String(Math.round(flight.speed)).padStart(6)} ${String(Math.round(flight.heading)).padStart(6)} ${runwayText} ${gateText}`
     );
   }
 

@@ -260,6 +260,9 @@ export class Simulation {
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
     const normalizedRunway = runway.toUpperCase();
     if (!/^(77L|77R)$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be 77L or 77R.' };
+    if (!this.isRunwayAvailable(normalizedRunway, flight.callsign)) {
+      return { ok: false, message: `Runway ${normalizedRunway} is currently occupied.` };
+    }
 
     return this.queueCommand(flight, 'runway', normalizedRunway, `Runway assignment ${normalizedRunway}`, 2000);
   }
@@ -372,6 +375,7 @@ export class Simulation {
         break;
       case 'gate':
         flight.gate = command.target as string;
+        flight.runway = undefined;
         flight.state = 'taxiing';
         flight.statusMessage = `Taxiing to gate ${flight.gate}`;
         this.pendingCommands.push({
@@ -402,8 +406,12 @@ export class Simulation {
         this.nextCommandId += 1;
         break;
       case 'runway':
-        flight.runway = command.target as string;
-        flight.statusMessage = `Assigned to runway ${flight.runway}`;
+        if (this.isRunwayAvailable(command.target as string, flight.callsign)) {
+          flight.runway = command.target as string;
+          flight.statusMessage = `Assigned to runway ${flight.runway}`;
+        } else {
+          flight.statusMessage = `Runway ${command.target as string} is occupied`;
+        }
         break;
       case 'clear-to-land':
         flight.altitude = 0;
@@ -455,6 +463,22 @@ export class Simulation {
     this.gameOver = true;
     this.running = false;
     this.paused = true;
+  }
+
+  private isRunwayAvailable(runway: string, excludedCallsign: string): boolean {
+    const assignedToOtherFlight = this.flights.some(
+      (flight) => flight.callsign !== excludedCallsign
+        && flight.runway === runway
+        && flight.state !== 'taxiing'
+        && flight.state !== 'gated',
+    );
+    const pendingForOtherFlight = this.pendingCommands.some(
+      (command) => command.action === 'runway'
+        && command.callsign !== excludedCallsign
+        && command.target === runway,
+    );
+
+    return !assignedToOtherFlight && !pendingForOtherFlight;
   }
 
   private generateFlights(): void {

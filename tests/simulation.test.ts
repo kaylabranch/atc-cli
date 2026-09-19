@@ -120,6 +120,24 @@ describe('simulation behavior', () => {
     expect(sim.renderActiveCommands()).toContain('50%');
   });
 
+  it('prevents runway conflicts and releases a runway when taxiing begins', () => {
+    const sim = new Simulation();
+    const [firstFlight, secondFlight] = sim.getFlights();
+
+    expect(sim.handleCommand(`runway ${firstFlight.callsign} 77L`).ok).toBe(true);
+    sim.step(2000);
+    expect(sim.handleCommand(`runway ${secondFlight.callsign} 77L`).ok).toBe(false);
+
+    expect(sim.handleCommand(`clear-to-land ${firstFlight.callsign}`).ok).toBe(true);
+    sim.step(15000);
+    expect(sim.handleCommand(`gate ${firstFlight.callsign} A1`).ok).toBe(true);
+    sim.step(2000);
+
+    expect(firstFlight.state).toBe('taxiing');
+    expect(firstFlight.runway).toBeUndefined();
+    expect(sim.handleCommand(`runway ${secondFlight.callsign} 77L`).ok).toBe(true);
+  });
+
   it('does not move flights without a controller command', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
@@ -197,19 +215,22 @@ describe('simulation behavior', () => {
     const flights = sim.getFlights();
 
     expect(flights).toHaveLength(3);
-    for (const flight of flights) {
-      sim.handleCommand(`runway ${flight.callsign} 77L`);
-    }
+    sim.handleCommand(`runway ${flights[0].callsign} 77L`);
+    sim.handleCommand(`runway ${flights[1].callsign} 77R`);
     sim.step(2000);
-    for (const flight of flights) {
-      sim.handleCommand(`clear-to-land ${flight.callsign}`);
-    }
+    sim.handleCommand(`clear-to-land ${flights[0].callsign}`);
+    sim.handleCommand(`clear-to-land ${flights[1].callsign}`);
 
     sim.step(15000);
 
-    for (const flight of flights) {
-      sim.handleCommand(`gate ${flight.callsign} A1`);
-    }
+    sim.handleCommand(`gate ${flights[0].callsign} A1`);
+    sim.handleCommand(`gate ${flights[1].callsign} A2`);
+    sim.step(2000);
+    expect(sim.handleCommand(`runway ${flights[2].callsign} 77L`).ok).toBe(true);
+    sim.step(2000);
+    sim.handleCommand(`clear-to-land ${flights[2].callsign}`);
+    sim.step(15000);
+    sim.handleCommand(`gate ${flights[2].callsign} A3`);
     sim.step(2000);
     sim.step(10000);
     sim.step(10000);
