@@ -46,3 +46,13 @@ export function parseCommand(input: string): ParsedCommand {
 export function createCommandResult(ok: boolean, message: string): CommandResult {
   return { ok, message };
 }
+
+export function completeCallsign(line: string, callsigns: string[]): [string[], string] {
+  if (/\s/.test(line)) return [[], line];
+
+  const prefix = line.toLowerCase();
+  return [
+    callsigns.filter((callsign) => callsign.toLowerCase().startsWith(prefix)),
+    line,
+  ];
+}

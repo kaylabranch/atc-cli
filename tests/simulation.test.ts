@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { progressBar } from '../src/cli/color.js';
-import { parseCommand } from '../src/cli/commandParser.js';
+import { completeCallsign, parseCommand } from '../src/cli/commandParser.js';
 import { Simulation } from '../src/simulation/Simulation.js';
 
 describe('command parsing', () => {
@@ -24,6 +24,11 @@ describe('command parsing', () => {
       action: 'speed',
       args: ['UAL123', '240'],
     });
+  });
+
+  it('completes callsigns only before the first space', () => {
+    expect(completeCallsign('NKS', ['NKS580', 'UAL613'])[0]).toEqual(['NKS580']);
+    expect(completeCallsign('NKS580 ', ['NKS580'])[0]).toEqual([]);
   });
 
 });

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import * as readline from 'node:readline';
+import { completeCallsign } from './cli/commandParser.js';
 import { Simulation } from './simulation/Simulation.js';
 
 const args = process.argv.slice(2);
@@ -21,6 +22,7 @@ if (args.includes('--help') || args.includes('-h')) {
 }
 
 const simulation = new Simulation();
+const callsigns = simulation.getFlights().map((flight) => flight.callsign);
 const flightCommands = [
   { command: 'speed', usage: 'knots' },
   { command: 'heading', usage: 'degrees' },
@@ -33,6 +35,7 @@ const flightCommands = [
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+  completer: (line: string) => completeCallsign(line, callsigns),
 });
 const output = process.stdout;
 const interactiveTerminal = output.isTTY === true;

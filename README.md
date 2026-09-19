@@ -62,7 +62,11 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
    exit
    ```
 
-  Flight instructions can also use callsign-first commands:
+### Interactive command entry
+
+When entering a callsign, type its first few characters and press `Tab` to complete it.
+
+Flight instructions use callsign-first commands:
 
   ```text
   UAL123 speed 240
@@ -74,7 +78,7 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
   UAL123 hold left
   ```
 
-  To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt; use the Up/Down arrow keys to select a command. It is inserted into the prompt, and you only need to enter its value.
+To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Use the Up/Down arrow keys to select a command and press `Enter` to accept it; the command is inserted into the prompt with a trailing space, ready for its value.
 
 ## Configuration
 
