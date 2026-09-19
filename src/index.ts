@@ -35,8 +35,9 @@ const renderScreen = (showPrompt: boolean): void => {
     simulation.renderStatusBoard(),
     simulation.renderActiveCommands(),
     simulation.renderAirportLayout(),
+    simulation.renderGridPositions(),
     lastMessage ? `\n${lastMessage}` : '',
-  ].filter(Boolean).join('\n');
+  ].filter(Boolean).join('\n\n');
 
   if (interactiveTerminal) {
     output.write('\u001b[2J\u001b[H');
