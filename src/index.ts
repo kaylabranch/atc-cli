@@ -42,6 +42,8 @@ const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
 let slashMenuIndex: number | null = null;
 let suppressNextSlashMenuUpdate = false;
+let inputHintVisible = false;
+const inputHint = 'callsign command value';
 
 const slashMenuText = (): string => [
   'FLIGHT COMMANDS - use Up/Down to choose',
@@ -57,10 +59,32 @@ const renderSlashMenu = (): void => {
   output.write('\u001b8');
 };
 
+const renderInputHint = (): void => {
+  if (!interactiveTerminal || rl.line.length > 0) {
+    inputHintVisible = false;
+    return;
+  }
+
+  output.write(`\u001b[3;90m${inputHint}\u001b[0m`);
+  readline.moveCursor(output, -inputHint.length, 0);
+  inputHintVisible = true;
+};
+
 const setInputLine = (line: string): void => {
   const interfaceState = rl as readline.Interface & { line: string; cursor: number };
   interfaceState.line = line;
   interfaceState.cursor = line.length;
+};
+
+const acceptSlashMenuSelection = (suppressKeypressRefresh: boolean): void => {
+  const parts = rl.line.trim().split(/\s+/);
+  const selectedCommand = parts[1]?.replace(/^\//, '').toLowerCase();
+  const command = flightCommands.find((item) => item.command === selectedCommand)?.command
+    ?? flightCommands[slashMenuIndex ?? 0].command;
+  setInputLine(`${parts[0]} ${command} `);
+  slashMenuIndex = null;
+  suppressNextSlashMenuUpdate = suppressKeypressRefresh;
+  renderScreen(true);
 };
 
 const updateSlashMenu = (): void => {
@@ -93,6 +117,7 @@ const renderScreen = (showPrompt: boolean): void => {
 
   if (showPrompt) {
     rl.prompt(true);
+    renderInputHint();
     renderSlashMenu();
   }
 };
@@ -112,14 +137,7 @@ const interval = setInterval(() => {
 
 rl.on('line', (input) => {
   if (slashMenuIndex !== null) {
-    const parts = input.trim().split(/\s+/);
-    const selectedCommand = parts[1]?.replace(/^\//, '').toLowerCase();
-    const command = flightCommands.find((item) => item.command === selectedCommand)?.command
-      ?? flightCommands[slashMenuIndex].command;
-    setInputLine(`${parts[0]} ${command} `);
-    slashMenuIndex = null;
-    suppressNextSlashMenuUpdate = true;
-    renderScreen(true);
+    acceptSlashMenuSelection(true);
     return;
   }
 
@@ -158,7 +176,16 @@ if (interactiveTerminal) {
     }
 
     if (slashMenuIndex === null || !key) {
-      setImmediate(updateSlashMenu);
+      setImmediate(() => {
+        if (rl.line.length > 0 && inputHintVisible) {
+          inputHintVisible = false;
+          renderScreen(true);
+        } else if (rl.line.length === 0 && !inputHintVisible && slashMenuIndex === null) {
+          renderScreen(true);
+        } else {
+          updateSlashMenu();
+        }
+      });
       return;
     }
 
@@ -168,6 +195,8 @@ if (interactiveTerminal) {
       const callsign = rl.line.trim().split(/\s+/)[0];
       setInputLine(`${callsign} ${flightCommands[slashMenuIndex].command} `);
       renderScreen(true);
+    } else if (key.name === 'tab') {
+      acceptSlashMenuSelection(false);
     } else {
       setImmediate(updateSlashMenu);
     }
