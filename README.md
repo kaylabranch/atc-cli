@@ -1,4 +1,4 @@
-# ATC CLI Simulation
+# ✈️ ATC CLI Simulation
 
 A terminal-based Air Traffic Control simulation written in TypeScript and Node.js. The user controls flights from a command-line REPL, monitors their state, assigns runways and gates, and manages traffic in a simplified airport environment.
 
