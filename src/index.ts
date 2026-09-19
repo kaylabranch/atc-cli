@@ -8,36 +8,19 @@ if (args[0]?.toLowerCase() === 'clock' && args[1]?.toLowerCase() === 'in') {
   args.splice(0, 2);
 }
 
-const valueFor = (flag: string): string | undefined => {
-  const index = args.indexOf(flag);
-  return index >= 0 ? args[index + 1] : undefined;
-};
-
 if (args.includes('--help') || args.includes('-h')) {
   console.log([
     'ATC CLI Simulation',
     '',
     'Options:',
-    '  --runways <number>                Configure available runways (default: 2)',
-    '  --gates <number>                  Configure available gates (default: 4)',
-    '  --flight-count <number>           Configure inbound flights (default: 3)',
-    '  --tick-ms <milliseconds>          Set display/update interval (default: 1000)',
     '  --help                            Show this help',
+    '',
+    'Airport: 2 runways, 3 gates, 3 starting flights',
   ].join('\n'));
   process.exit(0);
 }
 
-const numberFor = (flag: string, fallback: number): number => {
-  const value = Number(valueFor(flag));
-  return Number.isFinite(value) && value > 0 ? value : fallback;
-};
-
-const runways = numberFor('--runways', 2);
-const gates = numberFor('--gates', 4);
-const tickMs = numberFor('--tick-ms', 1000);
-const flightCount = numberFor('--flight-count', 3);
-
-const simulation = new Simulation({ runways, gates, tickMs, flightCount });
+const simulation = new Simulation();
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -76,9 +59,9 @@ const interval = setInterval(() => {
 
   if (simulation.isRunning() && !simulation.isPaused()) {
     simulation.step(elapsedMilliseconds);
-    renderScreen(true);
+    renderScreen(simulation.isRunning());
   }
-}, tickMs);
+}, simulation.getTickMs());
 
 rl.on('line', (input) => {
   const trimmed = input.trim();

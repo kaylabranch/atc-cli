@@ -9,15 +9,21 @@
 
 ## Requirements
 - Flights are generated randomly with a unique callsign, and an origin that may or may not be unique.
+- The simulation starts with exactly 3 flights and does not generate replacement flights yet.
 - The simulation should handle multiple flights simultaneously, with each flight having its own state and behavior.
 - There is one airport, the user is the ATC controller giving instructions to the Flight objects.
-- The airport can have 1 or more runways, that is configurable by the user.
-- The airport can have 1 or more gates, that is configurable by the user.
-- Intensity (timing) of the simulation is configurable by the user.
+- The airport always has 2 runways (`RWY1`, `RWY2`) and 3 gates (`G1`, `G2`, `G3`); runway and gate counts are not configurable.
+- The simulation uses one standard speed model and a fixed 1000 ms display refresh interval for now; refresh timing is not configurable.
 - There is a command line interface (CLI) that allows the user to interact with the simulation, including issuing commands to the flights and viewing their status.
 - The simulation should provide feedback to the user on the status of the flights, including their current state, position, and any instructions that have been issued.
 - If flights collide, are too close, or crash, the simulation should provide appropriate feedback to the user and handle the situation gracefully.
 - User commands should allow speed, heading, altitude, gate assignment, clearing to land, holding in a pattern, and runway assignment to be changed for each flight.
+- Controller commands are represented as pending operations with progress bars in a separate `IN PROGRESS` list. Do not put progress bars on individual flights.
+- A command changes a flight only when its pending operation completes. Ticks must not move aircraft autonomously.
+- Speed changes use a rate of 5 knots per second; this is a completion rate, not an input-size validation limit.
+- Heading changes use a turn rate of 3 degrees per second; this is a completion rate, not an input-size validation limit.
+- Command progress must use measured elapsed time between ticks, not assumed callback timing.
+- Displayed numeric values, including altitude, speed, heading, coordinates, and percentages, should be rounded to whole numbers.
 - Users should be able to get a help list of available commands and their usage.
 - Users can see status on one or all flights.
 - Users can pause and resume the simulation at any time.
@@ -25,13 +31,14 @@
 - Phraseology of commands should be realistic and follow standard ATC communication protocols.
 - Commands should be case-insensitive, and the simulation should handle invalid commands gracefully, providing appropriate feedback to the user.
 - There should be an indicator of the number of active flights in the simulation at any given time, and any flights in danger or that have crashed should be clearly indicated to the user, as well as number of flights safely landed and gated.
+- `clear-to-land` completes into a landed state. A landed flight must be assigned one of the fixed gates before unloading.
+- A gated flight unloads passengers for 10 seconds, then is removed from the simulation.
+- The game ends when all 3 starting flights are landed or crashed. New-flight generation is out of scope for now.
 - Departures and takeoffs are out of scope.
 - A textual representation of the airport layout should be displayed in the CLI, showing the runways, gates, and the positions of the flights in real-time.
-- Movement of flights should be represented in a way that is easy to understand and follow, with clear indicators of their current state and position.
-- Sim tick rate should be configurable by the user in terms of easiness, allowing for faster or slower simulation speeds.
+- Aircraft do not move, land, gate, crash, or change flight values without an explicit controller command or a defined post-landing lifecycle action.
+- The supported package startup command is `npm run clock-in`; `npm run dev` remains available for development.
 - Descent and climb rate should be 1500 ft/min.
-- Speed changes should be limited to 50 knots per second.
-- Turn rate should be limited to 3 degrees per second.
 - A README file should be included with instructions on how to set up and run the simulation, as well as any dependencies or prerequisites that are required.
 - The README should also include a high-level list of technologies used in the project, for example TypeScript and Node.js, as well as any libraries or frameworks that are utilized.
 
@@ -51,7 +58,7 @@
 - Use consistent naming conventions for variables, functions, classes, and other identifiers.
 
 ## Documentation
-- The README should be updated as features are added or modified, providing clear instructions on how to use the simulation and any new functionalities.
+- The README and .github/copilot-instructions.md files should be updated as features are added or modified, providing clear instructions on how to use the simulation and any new functionalities.
 
 ## Naming conventions
 - Use descriptive and meaningful names for variables, functions, classes, and other identifiers.

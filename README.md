@@ -6,7 +6,7 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 
 - REPL-driven command interface
 - Randomized flight generation with unique callsigns
-- Configurable runways, gates, flight count, and sim tick rate
+- Fixed airport with 2 runways, 3 gates, and 3 starting flights
 - Real-time ATC status board
 - In-place terminal updates that preserve typed input
 - Pending command list with progress tracking
@@ -43,7 +43,7 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
   npm run clock-in
   ```
 
-  Configuration flags can follow the script, for example `npm run clock-in -- --runways 3`.
+  The simulation uses a fixed 1000 ms display refresh interval for now.
 
 3. Use commands such as:
 
@@ -53,8 +53,8 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
    speed UAL123 240
    heading UAL123 180
    altitude UAL123 12000
-   gate UAL123 A1
-   runway UAL123 27L
+    gate UAL123 G1
+    runway UAL123 RWY1
    clear-to-land UAL123
    hold UAL123 left
    pause
@@ -67,14 +67,16 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 Run `npm run dev -- --help` to see all startup options. The simulation uses one standard speed model for all sessions:
 
 ```bash
-npm run dev -- --runways 3 --gates 5 --flight-count 4 --tick-ms 500
+npm run clock-in
 ```
 
-The default simulation uses 2 runways, 4 gates, 3 flights, and a 1000 ms display update interval. The `--tick-ms` option changes display refresh frequency only. Display updates do not move aircraft; flight changes happen through controller commands.
+The airport always uses 2 runways (`RWY1`, `RWY2`) and 3 gates (`G1`, `G2`, `G3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. Display updates do not move aircraft; flight changes happen through controller commands.
 
 Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
 
-When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%.
+When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%. After landing, assign a gate; the aircraft unloads passengers for 10 seconds and then leaves the simulation.
+
+The game ends when all three starting flights are landed or crashed. New-flight generation is not enabled yet.
 
 
 ## Project structure
@@ -100,3 +102,11 @@ tests/
 - Speed commands complete at a rate of 5 knots per second.
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
+
+## Future Enhancements
+
+- Generate replacement flights over time after the initial three-flight session.
+- Add explicit aircraft movement commands and more detailed position tracking.
+- Expand collision, proximity, and crash scenarios with clearer recovery actions.
+- Add runway and gate occupancy management as traffic volume grows.
+- Improve ATC phraseology and add more command validation guidance.

@@ -15,7 +15,7 @@ describe('command parsing', () => {
 
 describe('simulation behavior', () => {
   it('updates a flight speed when a valid speed command is issued', () => {
-    const sim = new Simulation({ runways: 2, gates: 4, tickMs: 500, flightCount: 1 });
+    const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const initialSpeed = flight.speed;
     const targetSpeed = initialSpeed + 10;
@@ -37,7 +37,7 @@ describe('simulation behavior', () => {
   });
 
   it('uses elapsed time for a large speed change', () => {
-    const sim = new Simulation({ tickMs: 1000, flightCount: 1 });
+    const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const targetSpeed = flight.speed + 100;
 
@@ -52,7 +52,7 @@ describe('simulation behavior', () => {
   });
 
   it('accepts a new heading and applies the turn rate to command duration', () => {
-    const sim = new Simulation({ tickMs: 1000, flightCount: 1 });
+    const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const targetHeading = (flight.heading + 90) % 360;
 
@@ -65,7 +65,7 @@ describe('simulation behavior', () => {
   });
 
   it('shows the status board for all flights', () => {
-    const sim = new Simulation({ flightCount: 2 });
+    const sim = new Simulation();
     const board = sim.renderStatusBoard();
 
     expect(board).toContain('ATC STATUS');
@@ -78,10 +78,10 @@ describe('simulation behavior', () => {
   });
 
   it('renders progress beside pending commands', () => {
-    const sim = new Simulation({ tickMs: 1000, flightCount: 1 });
+    const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
-    sim.handleCommand(`runway ${flight.callsign} 1`);
+    sim.handleCommand(`runway ${flight.callsign} RWY1`);
     sim.step();
 
     expect(sim.renderActiveCommands()).toContain('IN PROGRESS');
@@ -89,13 +89,48 @@ describe('simulation behavior', () => {
   });
 
   it('does not move flights without a controller command', () => {
-    const sim = new Simulation({ flightCount: 1, tickMs: 1000 });
+    const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const initialFlight = { ...flight };
 
     sim.step();
 
     expect(flight).toEqual(initialFlight);
+  });
+
+  it('lands, unloads, and removes a flight after ten seconds at its gate', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    expect(sim.handleCommand(`clear-to-land ${flight.callsign}`).ok).toBe(true);
+    sim.step(3000);
+    expect(sim.getFlight(flight.callsign)?.state).toBe('landed');
+
+    expect(sim.handleCommand(`gate ${flight.callsign} G1`).ok).toBe(true);
+    sim.step(2000);
+    expect(sim.getFlight(flight.callsign)?.state).toBe('gated');
+    expect(sim.renderActiveCommands()).toContain('Unloading passengers');
+
+    sim.step(9999);
+    expect(sim.getFlight(flight.callsign)).toBeDefined();
+    sim.step(1);
+    expect(sim.getFlight(flight.callsign)).toBeUndefined();
+  });
+
+  it('starts with three flights and ends when all three land', () => {
+    const sim = new Simulation();
+    const flights = sim.getFlights();
+
+    expect(flights).toHaveLength(3);
+    for (const flight of flights) {
+      sim.handleCommand(`clear-to-land ${flight.callsign}`);
+    }
+
+    sim.step(3000);
+
+    expect(sim.isGameOver()).toBe(true);
+    expect(sim.isRunning()).toBe(false);
+    expect(sim.renderStatusBoard()).toContain('GAME OVER');
   });
 
 });

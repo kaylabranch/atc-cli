@@ -32,13 +32,6 @@ export interface ActiveCommand {
   progress: number;
 }
 
-export interface SimulationOptions {
-  runways?: number;
-  gates?: number;
-  tickMs?: number;
-  flightCount?: number;
-}
-
 export interface CommandResult {
   ok: boolean;
   message: string;

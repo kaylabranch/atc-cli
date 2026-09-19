@@ -1,10 +1,15 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderActiveCommands, renderAirportLayout, renderFlightDetail, renderStatusBoard } from '../cli/renderer.js';
-import type { ActiveCommand, CommandResult, Flight, SimulationOptions } from '../types.js';
+import type { ActiveCommand, CommandResult, Flight } from '../types.js';
 
 const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
 const AIRLINE_PREFIXES = ['UAL', 'DLH', 'BAW', 'SWA', 'AAL', 'NKS'];
-type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'hold';
+const RUNWAY_COUNT = 2;
+const GATE_COUNT = 3;
+const STARTING_FLIGHT_COUNT = 3;
+const UNLOAD_DURATION_MS = 10000;
+const TICK_MS = 1000;
+type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'hold' | 'unload';
 type PendingCommand = ActiveCommand & {
   action: PendingAction;
   target: string | number;
@@ -18,16 +23,14 @@ export class Simulation {
   private running = true;
   private readonly runways: number;
   private readonly gates: number;
-  private readonly tickMs: number;
-  private readonly maxFlights: number;
+  private readonly finishedFlights = new Set<string>();
+  private gameOver = false;
   private pendingCommands: PendingCommand[] = [];
   private nextCommandId = 1;
 
-  constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3 }: SimulationOptions = {}) {
-    this.runways = runways;
-    this.gates = gates;
-    this.tickMs = tickMs;
-    this.maxFlights = flightCount;
+  constructor() {
+    this.runways = RUNWAY_COUNT;
+    this.gates = GATE_COUNT;
     this.generateFlights();
   }
 
@@ -48,11 +51,16 @@ export class Simulation {
   }
 
   getTickMs(): number {
-    return this.tickMs;
+    return TICK_MS;
   }
 
   getActiveCommands(): ActiveCommand[] {
-    return this.pendingCommands.map(({ id, callsign, description, progress }) => ({ id, callsign, description, progress }));
+    return this.pendingCommands.map(({ id, callsign, description, progress }) => ({
+      id,
+      callsign,
+      description,
+      progress: Math.round(progress),
+    }));
   }
 
   isPaused(): boolean {
@@ -61,6 +69,10 @@ export class Simulation {
 
   isRunning(): boolean {
     return this.running;
+  }
+
+  isGameOver(): boolean {
+    return this.gameOver;
   }
 
   togglePause(): void {
@@ -72,11 +84,11 @@ export class Simulation {
     this.paused = true;
   }
 
-  step(elapsedMilliseconds = this.tickMs): void {
+  step(elapsedMilliseconds = TICK_MS): void {
     if (!this.running || this.paused) return;
     for (const command of this.pendingCommands) {
       command.elapsedMs += elapsedMilliseconds;
-      command.progress = Math.min(100, Math.round((command.elapsedMs / command.durationMs) * 100));
+      command.progress = Math.min(100, (command.elapsedMs / command.durationMs) * 100);
     }
 
     const completedCommands = this.pendingCommands.filter((command) => command.progress >= 100);
@@ -86,6 +98,7 @@ export class Simulation {
     }
 
     this.detectDanger();
+    this.checkGameOver();
   }
 
   handleCommand(input: string): CommandResult {
@@ -128,7 +141,8 @@ export class Simulation {
     const activeFlights = this.flights.length;
     const dangerFlights = this.flights.filter((flight) => flight.danger).length;
     const landedFlights = this.flights.filter((flight) => flight.state === 'landed' || flight.state === 'gated').length;
-    return renderStatusBoard(this.flights, activeFlights, dangerFlights, landedFlights);
+    const board = renderStatusBoard(this.flights, activeFlights, dangerFlights, landedFlights);
+    return this.gameOver ? `${board}\n\nGAME OVER - All starting flights are landed or crashed.` : board;
   }
 
   renderAirportLayout(): string {
@@ -200,8 +214,11 @@ export class Simulation {
     const [callsign, gate] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
+    const normalizedGate = gate.toUpperCase();
+    if (!/^G[1-3]$/.test(normalizedGate)) return { ok: false, message: 'Gate must be G1, G2, or G3.' };
+    if (flight.state !== 'landed') return { ok: false, message: `${flight.callsign} must be landed before gate assignment.` };
 
-    return this.queueCommand(flight, 'gate', gate, `Gate assignment ${gate}`, 2000);
+    return this.queueCommand(flight, 'gate', normalizedGate, `Gate assignment ${normalizedGate}`, 2000);
   }
 
   private handleRunway(args: string[]): CommandResult {
@@ -209,8 +226,10 @@ export class Simulation {
     const [callsign, runway] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
+    const normalizedRunway = runway.toUpperCase();
+    if (!/^RWY[1-2]$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be RWY1 or RWY2.' };
 
-    return this.queueCommand(flight, 'runway', runway, `Runway assignment ${runway}`, 2000);
+    return this.queueCommand(flight, 'runway', normalizedRunway, `Runway assignment ${normalizedRunway}`, 2000);
   }
 
   private handleClearToLand(args: string[]): CommandResult {
@@ -280,14 +299,32 @@ export class Simulation {
         flight.statusMessage = `Assigned to runway ${flight.runway}`;
         break;
       case 'clear-to-land':
-        flight.state = 'approach';
-        flight.statusMessage = 'Cleared to land';
+        flight.state = 'landed';
+        flight.statusMessage = 'Landed - awaiting gate assignment';
         flight.danger = false;
+        this.finishedFlights.add(flight.callsign);
         break;
       case 'hold':
         flight.state = 'holding';
         flight.statusMessage = `Holding ${command.target as string} pattern`;
         break;
+      case 'unload':
+        this.flights = this.flights.filter((candidate) => candidate.callsign !== flight.callsign);
+        break;
+    }
+
+    if (command.action === 'gate') {
+      this.pendingCommands.push({
+        id: this.nextCommandId,
+        callsign: flight.callsign,
+        description: 'Unloading passengers',
+        progress: 0,
+        action: 'unload',
+        target: flight.gate ?? '',
+        durationMs: UNLOAD_DURATION_MS,
+        elapsedMs: 0,
+      });
+      this.nextCommandId += 1;
     }
   }
 
@@ -311,10 +348,16 @@ export class Simulation {
     }
   }
 
-  private generateFlights(): void {
-    const flightCount = Math.min(this.maxFlights, 8);
+  private checkGameOver(): void {
+    if (this.finishedFlights.size < STARTING_FLIGHT_COUNT) return;
 
-    for (let i = 0; i < flightCount; i += 1) {
+    this.gameOver = true;
+    this.running = false;
+    this.paused = true;
+  }
+
+  private generateFlights(): void {
+    for (let i = 0; i < STARTING_FLIGHT_COUNT; i += 1) {
       const prefix = AIRLINE_PREFIXES[Math.floor(Math.random() * AIRLINE_PREFIXES.length)];
       const number = 100 + Math.floor(Math.random() * 900);
       const callsign = `${prefix}${number}`;
