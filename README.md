@@ -74,7 +74,7 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
   UAL123 hold left
   ```
 
-  To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears above the prompt; use the Up/Down arrow keys to select a command. It is inserted into the prompt, and you only need to enter its value.
+  To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt; use the Up/Down arrow keys to select a command. It is inserted into the prompt, and you only need to enter its value.
 
 ## Configuration
 

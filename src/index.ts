@@ -38,6 +38,7 @@ const output = process.stdout;
 const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
 let slashMenuIndex: number | null = null;
+let suppressNextSlashMenuUpdate = false;
 
 const slashMenuText = (): string => [
   'FLIGHT COMMANDS - use Up/Down to choose',
@@ -49,10 +50,7 @@ const renderSlashMenu = (): void => {
 
   const menuLines = slashMenuText().split('\n');
   output.write('\u001b7');
-  output.write(`\u001b[${menuLines.length}A`);
-  for (const line of menuLines) {
-    output.write(`\u001b[2K\r${line}\n`);
-  }
+  output.write(`\n${menuLines.join('\n')}`);
   output.write('\u001b8');
 };
 
@@ -110,6 +108,18 @@ const interval = setInterval(() => {
 }, simulation.getTickMs());
 
 rl.on('line', (input) => {
+  if (slashMenuIndex !== null) {
+    const parts = input.trim().split(/\s+/);
+    const selectedCommand = parts[1]?.replace(/^\//, '').toLowerCase();
+    const command = flightCommands.find((item) => item.command === selectedCommand)?.command
+      ?? flightCommands[slashMenuIndex].command;
+    setInputLine(`${parts[0]} ${command} `);
+    slashMenuIndex = null;
+    suppressNextSlashMenuUpdate = true;
+    renderScreen(true);
+    return;
+  }
+
   slashMenuIndex = null;
   const trimmed = input.trim();
   if (!trimmed) {
@@ -139,6 +149,11 @@ renderScreen(true);
 if (interactiveTerminal) {
   readline.emitKeypressEvents(process.stdin);
   process.stdin.on('keypress', (_input, key) => {
+    if (suppressNextSlashMenuUpdate) {
+      suppressNextSlashMenuUpdate = false;
+      return;
+    }
+
     if (slashMenuIndex === null || !key) {
       setImmediate(updateSlashMenu);
       return;
