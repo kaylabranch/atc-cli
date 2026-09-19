@@ -1,5 +1,5 @@
 import { parseCommand } from '../cli/commandParser.js';
-import { renderActiveCommands, renderAirportLayout, renderFlightDetail, renderGridPositions, renderStatusBoard } from '../cli/renderer.js';
+import { renderActiveCommands, renderAirportLayout, renderFlightDetail, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
 
 const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
@@ -153,13 +153,22 @@ export class Simulation {
     return renderGridPositions(this.flights);
   }
 
+  renderStatusAndGrid(): string {
+    const leftColumn = [
+      this.renderStatusBoard(),
+      this.renderActiveCommands(),
+      this.renderAirportLayout(),
+    ].join('\n\n');
+    return renderSideBySide(leftColumn, this.renderGridPositions());
+  }
+
   renderActiveCommands(): string {
     return renderActiveCommands(this.getActiveCommands());
   }
 
   private handleStatus(args: string[]): CommandResult {
     if (!args.length || args[0] === 'all') {
-      return { ok: true, message: `${this.renderStatusBoard()}\n\n${this.renderActiveCommands()}\n\n${this.renderAirportLayout()}\n\n${this.renderGridPositions()}` };
+      return { ok: true, message: this.renderStatusAndGrid() };
     }
 
     const flight = this.getFlight(args[0]);

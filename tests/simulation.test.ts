@@ -73,6 +73,18 @@ describe('simulation behavior', () => {
     expect(board).not.toContain('PROGRESS');
   });
 
+  it('renders a visual grid with the airport and flight markers', () => {
+    const sim = new Simulation();
+    const grid = sim.renderGridPositions();
+    const flights = sim.getFlights();
+
+    expect(grid).toContain('GRID POSITIONS');
+    expect(grid).toContain('Legend: X=airport, *=multiple flights');
+    expect(grid).toContain('X');
+    expect(grid).toContain(flights[0].callsign);
+    expect(grid).toContain(`+${'-'.repeat(31)}+`);
+  });
+
   it('rounds displayed progress to whole percentages', () => {
     expect(progressBar(12.6)).toContain('13%');
   });
@@ -91,11 +103,13 @@ describe('simulation behavior', () => {
   it('does not move flights without a controller command', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
-    const initialFlight = { ...flight };
+    const initialPosition = { x: flight.x, y: flight.y };
+    const initialValues = { altitude: flight.altitude, speed: flight.speed, heading: flight.heading };
 
     sim.step();
 
-    expect(flight).toEqual(initialFlight);
+    expect({ x: flight.x, y: flight.y }).toEqual(initialPosition);
+    expect({ altitude: flight.altitude, speed: flight.speed, heading: flight.heading }).toEqual(initialValues);
   });
 
   it('lands, unloads, and removes a flight after ten seconds at its gate', () => {

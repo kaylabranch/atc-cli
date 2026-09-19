@@ -2,6 +2,12 @@ import { colorLabels, progressBar } from './color.js';
 import type { ActiveCommand, Flight } from '../types.js';
 
 const { danger, warning, success, info, accent, bold } = colorLabels();
+const GRID_WIDTH = 31;
+const GRID_HEIGHT = 16;
+const GRID_MAX_COORDINATE = 30;
+const AIRPORT_X = 16;
+const AIRPORT_Y = 16;
+const ANSI_STYLE_PATTERN = /\u001b\[[0-9;]*m/g;
 
 export function renderAirportLayout(runways: number, gates: number): string {
   const runwayNames = ['77L', '77R'];
@@ -17,15 +23,56 @@ export function renderAirportLayout(runways: number, gates: number): string {
 }
 
 export function renderGridPositions(flights: Flight[]): string {
-  const flightText = flights
-    .map((flight) => `${flight.callsign}:${flight.state},${Math.round(flight.x)},${Math.round(flight.y)}`)
-    .join(' | ');
+  const cells = Array.from({ length: GRID_HEIGHT }, () => Array.from({ length: GRID_WIDTH }, () => ' '));
+  const markers = new Map<string, string>();
+  const usedMarkers = new Set(['X', '*']);
 
-  return [
-    bold('GRID POSITIONS'),
-    'Reference: airport at (0,0)',
-    `Flights: ${flightText || 'none'}`,
-  ].join('\n');
+  const airportRow = Math.round((AIRPORT_Y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
+  cells[airportRow][AIRPORT_X] = 'X';
+
+  for (const flight of flights) {
+    const marker = [...flight.callsign].reverse().find((character) => !usedMarkers.has(character)) ?? '?';
+    usedMarkers.add(marker);
+    const x = Math.max(0, Math.min(GRID_WIDTH - 1, Math.round(flight.x)));
+    const y = Math.max(0, Math.min(GRID_MAX_COORDINATE, Math.round(flight.y)));
+    const row = Math.round((y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
+    if (cells[row][x] === ' ') {
+      cells[row][x] = marker;
+    } else if (cells[row][x] !== 'X') {
+      cells[row][x] = '*';
+    }
+    markers.set(marker, `${marker}=${flight.callsign}`);
+  }
+
+  const border = `    +${'-'.repeat(GRID_WIDTH)}+`;
+  const gridLines = [bold('GRID POSITIONS'), 'Legend: X=airport, *=multiple flights', border];
+
+  for (let row = GRID_HEIGHT - 1; row >= 0; row -= 1) {
+    const y = Math.round((row / (GRID_HEIGHT - 1)) * GRID_MAX_COORDINATE);
+    gridLines.push(`${String(y).padStart(3)} |${cells[row].join('')}|`);
+  }
+
+  gridLines.push(border, '      0         10        20        30');
+  gridLines.push(`Flights: ${Array.from(markers.values()).join(' | ') || 'none'}`);
+
+  return gridLines.join('\n');
+}
+
+export function renderSideBySide(left: string, right: string, gap = 4): string {
+  const leftLines = left.split('\n');
+  const rightLines = right.split('\n');
+  const leftWidth = Math.max(...leftLines.map((line) => line.replace(ANSI_STYLE_PATTERN, '').length));
+  const lineCount = Math.max(leftLines.length, rightLines.length);
+  const lines: string[] = [];
+
+  for (let index = 0; index < lineCount; index += 1) {
+    const leftLine = leftLines[index] ?? '';
+    const rightLine = rightLines[index] ?? '';
+    const visibleLeftWidth = leftLine.replace(ANSI_STYLE_PATTERN, '').length;
+    lines.push(`${leftLine}${' '.repeat(leftWidth - visibleLeftWidth + gap)}${rightLine}`.trimEnd());
+  }
+
+  return lines.join('\n');
 }
 
 export function renderStatusBoard(flights: Flight[], activeFlights: number, dangerFlights: number, landedFlights: number): string {

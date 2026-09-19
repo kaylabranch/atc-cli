@@ -30,14 +30,12 @@ const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
 
 const renderScreen = (showPrompt: boolean): void => {
-  const screen = [
+  const content = [
     'ATC CLI Simulation',
-    simulation.renderStatusBoard(),
-    simulation.renderActiveCommands(),
-    simulation.renderAirportLayout(),
-    simulation.renderGridPositions(),
+    simulation.renderStatusAndGrid(),
     lastMessage ? `\n${lastMessage}` : '',
   ].filter(Boolean).join('\n\n');
+  const screen = `\n\n\n${content}`;
 
   if (interactiveTerminal) {
     output.write('\u001b[2J\u001b[H');
