@@ -37,6 +37,14 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
    npm run dev
    ```
 
+  Or use the package script with an ATC-style phrase:
+
+  ```bash
+  npm run clock-in
+  ```
+
+  Configuration flags can follow the script, for example `npm run clock-in -- --runways 3`.
+
 3. Use commands such as:
 
    ```text

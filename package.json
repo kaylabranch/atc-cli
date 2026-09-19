@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "atc": "dist/index.js"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
+    "clock-in": "tsx src/index.ts clock in",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "test": "vitest run"

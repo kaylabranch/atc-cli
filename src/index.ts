@@ -4,6 +4,10 @@ import * as readline from 'node:readline';
 import { Simulation } from './simulation/Simulation.js';
 
 const args = process.argv.slice(2);
+if (args[0]?.toLowerCase() === 'clock' && args[1]?.toLowerCase() === 'in') {
+  args.splice(0, 2);
+}
+
 const valueFor = (flag: string): string | undefined => {
   const index = args.indexOf(flag);
   return index >= 0 ? args[index + 1] : undefined;
