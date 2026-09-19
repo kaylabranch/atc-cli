@@ -7,7 +7,7 @@ export function renderAirportLayout(flights: Flight[], runways: number, gates: n
   const runwayLabel = Array.from({ length: runways }, (_, index) => `RWY${index + 1}`).join('     ');
   const gateLabel = Array.from({ length: gates }, (_, index) => `G${index + 1}`).join('  ');
   const flightText = flights
-    .map((flight) => `${flight.callsign}:${flight.state}:${flight.x.toFixed(1)},${flight.y.toFixed(1)}`)
+    .map((flight) => `${flight.callsign}:${flight.state},${Math.round(flight.x)},${Math.round(flight.y)}`)
     .join(' | ');
 
   return [

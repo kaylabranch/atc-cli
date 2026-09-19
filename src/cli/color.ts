@@ -32,7 +32,8 @@ export function colorLabels() {
 
 export function progressBar(percent: number, width = 20, filledChar = '#', emptyChar = '.') {
   const safePercent = Math.max(0, Math.min(100, percent));
-  const filled = Math.round((safePercent / 100) * width);
+  const roundedPercent = Math.round(safePercent);
+  const filled = Math.round((roundedPercent / 100) * width);
   const empty = width - filled;
-  return `[${filledChar.repeat(filled)}${emptyChar.repeat(empty)}] ${safePercent}%`;
+  return `[${filledChar.repeat(filled)}${emptyChar.repeat(empty)}] ${roundedPercent}%`;
 }

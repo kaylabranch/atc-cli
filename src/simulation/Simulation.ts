@@ -76,7 +76,7 @@ export class Simulation {
     if (!this.running || this.paused) return;
     for (const command of this.pendingCommands) {
       command.elapsedMs += elapsedMilliseconds;
-      command.progress = Math.min(100, (command.elapsedMs / command.durationMs) * 100);
+      command.progress = Math.min(100, Math.round((command.elapsedMs / command.durationMs) * 100));
     }
 
     const completedCommands = this.pendingCommands.filter((command) => command.progress >= 100);
@@ -158,7 +158,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    const speed = Number(rawSpeed);
+    const speed = Math.round(Number(rawSpeed));
     if (Number.isNaN(speed)) return { ok: false, message: 'Speed must be a number.' };
 
     const delta = Math.abs(speed - flight.speed);
@@ -172,7 +172,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    const heading = Number(rawHeading);
+    const heading = Math.round(Number(rawHeading));
     if (Number.isNaN(heading)) return { ok: false, message: 'Heading must be a number.' };
 
     const turnDistance = Math.abs(((heading - flight.heading + 540) % 360) - 180);
@@ -186,7 +186,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    const altitude = Number(rawAltitude);
+    const altitude = Math.round(Number(rawAltitude));
     if (Number.isNaN(altitude)) return { ok: false, message: 'Altitude must be a number.' };
 
     const delta = Math.abs(altitude - flight.altitude);
@@ -323,11 +323,11 @@ export class Simulation {
       this.flights.push({
         callsign,
         origin,
-        altitude: 5000 + Math.random() * 12000,
-        speed: 180 + Math.random() * 120,
-        heading: Math.random() * 360,
-        x: Math.random() * 30,
-        y: Math.random() * 30,
+        altitude: Math.round(5000 + Math.random() * 12000),
+        speed: Math.round(180 + Math.random() * 120),
+        heading: Math.round(Math.random() * 360),
+        x: Math.round(Math.random() * 30),
+        y: Math.round(Math.random() * 30),
         state: i % 2 === 0 ? 'approach' : 'holding',
         statusMessage: 'Tracking inbound traffic',
         danger: false,

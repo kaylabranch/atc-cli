@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { progressBar } from '../src/cli/color.js';
 import { parseCommand } from '../src/cli/commandParser.js';
 import { Simulation } from '../src/simulation/Simulation.js';
 
@@ -60,7 +61,7 @@ describe('simulation behavior', () => {
     expect(outcome.ok).toBe(true);
     expect(flight.heading).not.toBe(targetHeading);
     sim.step();
-    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(100 / 30);
+    expect(sim.getActiveCommands()[0].progress).toBe(3);
   });
 
   it('shows the status board for all flights', () => {
@@ -70,6 +71,10 @@ describe('simulation behavior', () => {
     expect(board).toContain('ATC STATUS');
     expect(board).toContain('CALLSIGN');
     expect(board).not.toContain('PROGRESS');
+  });
+
+  it('rounds displayed progress to whole percentages', () => {
+    expect(progressBar(12.6)).toContain('13%');
   });
 
   it('renders progress beside pending commands', () => {
