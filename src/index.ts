@@ -15,7 +15,7 @@ if (args.includes('--help') || args.includes('-h')) {
     'Options:',
     '  --help                            Show this help',
     '',
-    'Airport: 2 runways, 3 gates, 3 starting flights',
+    'Airport: runways 77L/77R, gates A1/A2/A3, 3 starting flights',
   ].join('\n'));
   process.exit(0);
 }

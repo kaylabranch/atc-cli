@@ -12,7 +12,7 @@
 - The simulation starts with exactly 3 flights and does not generate replacement flights yet.
 - The simulation should handle multiple flights simultaneously, with each flight having its own state and behavior.
 - There is one airport, the user is the ATC controller giving instructions to the Flight objects.
-- The airport always has 2 runways (`RWY1`, `RWY2`) and 3 gates (`G1`, `G2`, `G3`); runway and gate counts are not configurable.
+- The airport always has 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`); runway and gate counts are not configurable.
 - The simulation uses one standard speed model and a fixed 1000 ms display refresh interval for now; refresh timing is not configurable.
 - There is a command line interface (CLI) that allows the user to interact with the simulation, including issuing commands to the flights and viewing their status.
 - The simulation should provide feedback to the user on the status of the flights, including their current state, position, and any instructions that have been issued.

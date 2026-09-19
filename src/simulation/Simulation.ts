@@ -215,7 +215,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
     const normalizedGate = gate.toUpperCase();
-    if (!/^G[1-3]$/.test(normalizedGate)) return { ok: false, message: 'Gate must be G1, G2, or G3.' };
+    if (!/^A[1-3]$/.test(normalizedGate)) return { ok: false, message: 'Gate must be A1, A2, or A3.' };
     if (flight.state !== 'landed') return { ok: false, message: `${flight.callsign} must be landed before gate assignment.` };
 
     return this.queueCommand(flight, 'gate', normalizedGate, `Gate assignment ${normalizedGate}`, 2000);
@@ -227,7 +227,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
     const normalizedRunway = runway.toUpperCase();
-    if (!/^RWY[1-2]$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be RWY1 or RWY2.' };
+    if (!/^(77L|77R)$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be 77L or 77R.' };
 
     return this.queueCommand(flight, 'runway', normalizedRunway, `Runway assignment ${normalizedRunway}`, 2000);
   }

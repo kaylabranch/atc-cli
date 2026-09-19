@@ -81,7 +81,7 @@ describe('simulation behavior', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
-    sim.handleCommand(`runway ${flight.callsign} RWY1`);
+    sim.handleCommand(`runway ${flight.callsign} 77L`);
     sim.step();
 
     expect(sim.renderActiveCommands()).toContain('IN PROGRESS');
@@ -106,7 +106,7 @@ describe('simulation behavior', () => {
     sim.step(3000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('landed');
 
-    expect(sim.handleCommand(`gate ${flight.callsign} G1`).ok).toBe(true);
+    expect(sim.handleCommand(`gate ${flight.callsign} A1`).ok).toBe(true);
     sim.step(2000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('gated');
     expect(sim.renderActiveCommands()).toContain('Unloading passengers');

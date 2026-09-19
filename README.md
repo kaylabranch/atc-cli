@@ -53,8 +53,8 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
    speed UAL123 240
    heading UAL123 180
    altitude UAL123 12000
-    gate UAL123 G1
-    runway UAL123 RWY1
+    gate UAL123 A1
+    runway UAL123 77L
    clear-to-land UAL123
    hold UAL123 left
    pause
@@ -70,7 +70,7 @@ Run `npm run dev -- --help` to see all startup options. The simulation uses one 
 npm run clock-in
 ```
 
-The airport always uses 2 runways (`RWY1`, `RWY2`) and 3 gates (`G1`, `G2`, `G3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. Display updates do not move aircraft; flight changes happen through controller commands.
+The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. Display updates do not move aircraft; flight changes happen through controller commands.
 
 Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
 

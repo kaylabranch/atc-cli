@@ -4,8 +4,10 @@ import type { ActiveCommand, Flight } from '../types.js';
 const { danger, warning, success, info, accent, bold } = colorLabels();
 
 export function renderAirportLayout(flights: Flight[], runways: number, gates: number): string {
-  const runwayLabel = Array.from({ length: runways }, (_, index) => `RWY${index + 1}`).join('     ');
-  const gateLabel = Array.from({ length: gates }, (_, index) => `G${index + 1}`).join('  ');
+  const runwayNames = ['77L', '77R'];
+  const gateNames = ['A1', 'A2', 'A3'];
+  const runwayLabel = runwayNames.slice(0, runways).join('     ');
+  const gateLabel = gateNames.slice(0, gates).join('  ');
   const flightText = flights
     .map((flight) => `${flight.callsign}:${flight.state},${Math.round(flight.x)},${Math.round(flight.y)}`)
     .join(' | ');
