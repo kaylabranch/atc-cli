@@ -93,6 +93,14 @@ describe('simulation behavior', () => {
     expect(board).not.toContain('PROGRESS');
   });
 
+  it('shows the altitude cross-section beside the grid', () => {
+    const sim = new Simulation();
+    const dashboard = sim.renderStatusAndGrid();
+
+    expect(dashboard).toContain('ALTITUDE CROSS-SECTION');
+    expect(dashboard).toContain('distance from airport');
+  });
+
   it('renders a visual grid with the airport and flight markers', () => {
     const sim = new Simulation();
     const grid = sim.renderGridPositions();

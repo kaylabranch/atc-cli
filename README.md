@@ -4,18 +4,9 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 
 ## Features
 
-- REPL-driven command interface
-- Randomized flight generation with unique callsigns
-- Fixed airport with 2 runways, 3 gates, and 3 starting flights
-- Real-time ATC status board
-- In-place terminal updates that preserve typed input
-- Pending command list with progress tracking
-- ASCII airport layout
-- Speed, heading, altitude, gate, runway, and landing controls
-- Collision and danger detection
-- Pause/resume and clean exit support
-- Colorized terminal output with fallbacks for non-TTY terminals
+- Altitude cross-section showing height versus distance from the airport
 
+The altitude chart's horizontal axis uses simulation grid units, not miles. Distance is the straight-line distance from the airport reference point.
 ## Tech stack
 
 - TypeScript

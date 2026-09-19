@@ -8,6 +8,10 @@ const GRID_MAX_COORDINATE = 30;
 const AIRPORT_X = 16;
 const AIRPORT_Y = 16;
 const ANSI_STYLE_PATTERN = /\u001b\[[0-9;]*m/g;
+const ALTITUDE_CHART_WIDTH = 24;
+const ALTITUDE_CHART_HEIGHT = 9;
+const ALTITUDE_CHART_MAX = 18000;
+const DISTANCE_CHART_MAX = 25;
 
 export function renderAirportLayout(runways: number, gates: number): string {
   const runwayNames = ['77L', '77R'];
@@ -56,6 +60,35 @@ export function renderGridPositions(flights: Flight[]): string {
   gridLines.push(`Flights: ${Array.from(markers.values()).join(' | ') || 'none'}`);
 
   return gridLines.join('\n');
+}
+
+export function renderAltitudeChart(flights: Flight[]): string {
+  const chart = Array.from({ length: ALTITUDE_CHART_HEIGHT }, () => Array.from({ length: ALTITUDE_CHART_WIDTH + 1 }, () => ' '));
+  const markers: string[] = [];
+  const usedMarkers = new Set(['*']);
+
+  for (const flight of flights) {
+    const marker = [...flight.callsign].reverse().find((character) => !usedMarkers.has(character)) ?? '?';
+    usedMarkers.add(marker);
+    const distance = Math.sqrt((flight.x - AIRPORT_X) ** 2 + (flight.y - AIRPORT_Y) ** 2);
+    const chartDistance = Math.min(DISTANCE_CHART_MAX, Math.max(0, distance));
+    const column = Math.round((chartDistance / DISTANCE_CHART_MAX) * ALTITUDE_CHART_WIDTH) + 1;
+    const altitude = Math.min(ALTITUDE_CHART_MAX, Math.max(0, flight.altitude));
+    const row = ALTITUDE_CHART_HEIGHT - 1 - Math.round((altitude / ALTITUDE_CHART_MAX) * (ALTITUDE_CHART_HEIGHT - 1));
+    chart[row][column] = chart[row][column] === ' ' ? marker : '*';
+    markers.push(`${marker}=${flight.callsign} ${Math.round(flight.altitude)}ft/${Math.round(distance)}u`);
+  }
+
+  const lines = [bold('ALTITUDE CROSS-SECTION'), 'Height vs. distance from airport', `     ${'-'.repeat(ALTITUDE_CHART_WIDTH + 1)}`];
+  for (let row = 0; row < ALTITUDE_CHART_HEIGHT; row += 1) {
+    const altitude = Math.round(ALTITUDE_CHART_MAX - (row / (ALTITUDE_CHART_HEIGHT - 1)) * ALTITUDE_CHART_MAX);
+    lines.push(`${String(altitude).padStart(5)} |${chart[row].join('')}`);
+  }
+  lines.push(`    0 +${'-'.repeat(ALTITUDE_CHART_WIDTH)}>`);
+  lines.push('      0       5       10      15      20      25u');
+  lines.push(`Flights: ${markers.join(' | ') || 'none'}`);
+
+  return lines.join('\n');
 }
 
 export function renderSideBySide(left: string, right: string, gap = 4): string {
