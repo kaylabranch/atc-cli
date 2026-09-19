@@ -132,16 +132,56 @@ describe('simulation behavior', () => {
     expect({ altitude: flight.altitude, speed: flight.speed, heading: flight.heading }).toEqual(initialValues);
   });
 
+  it('descends during landing and can abort into a climb', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    const initialAltitude = flight.altitude;
+    const initialSpeed = flight.speed;
+
+    expect(sim.handleCommand(`clear-to-land ${flight.callsign}`).ok).toBe(false);
+    sim.handleCommand(`runway ${flight.callsign} 77L`);
+    sim.step(2000);
+    sim.handleCommand(`clear-to-land ${flight.callsign}`);
+    expect(flight.state).toBe('landing');
+    expect(flight.statusMessage).toBe('Landing in progress');
+
+    sim.step(7500);
+    expect(flight.altitude).toBeGreaterThan(0);
+    expect(flight.altitude).toBeLessThan(initialAltitude);
+    expect(flight.speed).toBeGreaterThan(0);
+    expect(flight.speed).toBeLessThan(initialSpeed);
+
+    const abortResult = sim.handleCommand(`abort-landing ${flight.callsign}`);
+    expect(abortResult.ok).toBe(true);
+    expect(flight.state).toBe('climbing');
+
+    sim.step(7500);
+    expect(flight.altitude).toBeGreaterThan(0);
+    expect(flight.altitude).toBeGreaterThan(Math.round(initialAltitude / 2));
+    sim.step(7500);
+    expect(flight.state).toBe('approach');
+    expect(flight.altitude).toBe(initialAltitude);
+    expect(flight.speed).toBe(initialSpeed);
+  });
+
   it('lands, unloads, and removes a flight after ten seconds at its gate', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
+    sim.handleCommand(`runway ${flight.callsign} 77L`);
+    sim.step(2000);
     expect(sim.handleCommand(`clear-to-land ${flight.callsign}`).ok).toBe(true);
-    sim.step(3000);
+    sim.step(15000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('landed');
+    expect(sim.renderStatusBoard()).toContain('Completed: 0');
 
     expect(sim.handleCommand(`gate ${flight.callsign} A1`).ok).toBe(true);
     sim.step(2000);
+    expect(sim.getFlight(flight.callsign)?.state).toBe('taxiing');
+    expect(sim.getFlight(flight.callsign)?.statusMessage).toBe('Taxiing to gate A1');
+    sim.step(9999);
+    expect(sim.getFlight(flight.callsign)?.state).toBe('taxiing');
+    sim.step(1);
     expect(sim.getFlight(flight.callsign)?.state).toBe('gated');
     expect(sim.renderActiveCommands()).toContain('Unloading passengers');
 
@@ -149,18 +189,30 @@ describe('simulation behavior', () => {
     expect(sim.getFlight(flight.callsign)).toBeDefined();
     sim.step(1);
     expect(sim.getFlight(flight.callsign)).toBeUndefined();
+    expect(sim.renderStatusBoard()).toContain('Completed: 1');
   });
 
-  it('starts with three flights and ends when all three land', () => {
+  it('starts with three flights and ends when all three complete', () => {
     const sim = new Simulation();
     const flights = sim.getFlights();
 
     expect(flights).toHaveLength(3);
     for (const flight of flights) {
+      sim.handleCommand(`runway ${flight.callsign} 77L`);
+    }
+    sim.step(2000);
+    for (const flight of flights) {
       sim.handleCommand(`clear-to-land ${flight.callsign}`);
     }
 
-    sim.step(3000);
+    sim.step(15000);
+
+    for (const flight of flights) {
+      sim.handleCommand(`gate ${flight.callsign} A1`);
+    }
+    sim.step(2000);
+    sim.step(10000);
+    sim.step(10000);
 
     expect(sim.isGameOver()).toBe(true);
     expect(sim.isRunning()).toBe(false);

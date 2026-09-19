@@ -3,6 +3,7 @@ export type FlightState =
   | 'holding'
   | 'climbing'
   | 'descending'
+  | 'landing'
   | 'gated'
   | 'landed'
   | 'crashed'

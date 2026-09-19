@@ -76,7 +76,9 @@ Flight instructions use callsign-first commands:
   UAL123 altitude 12000
   UAL123 gate A1
   UAL123 runway 77L
+  UAL123 runway 77L
   UAL123 clear-to-land
+  UAL123 abort-landing
   UAL123 hold left
   ```
 
@@ -90,13 +92,17 @@ Run `npm run dev -- --help` to see all startup options. The simulation uses one 
 npm run clock-in
 ```
 
-The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. Display updates do not move aircraft; flight changes happen through controller commands.
+The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. The status table includes runway and gate assignments. Display updates do not move aircraft; flight changes happen through controller commands.
+
+Landing takes 15 seconds. During landing, altitude and speed decrease toward zero. Use `abort-landing` while a flight is landing to cancel the descent and climb back toward its pre-landing altitude and speed.
+
+Assign a runway before clearing a flight to land. For example, use `UAL123 runway 77L`, wait for the assignment to complete, then use `UAL123 clear-to-land`.
 
 Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
 
-When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%. After landing, assign a gate; the aircraft unloads passengers for 10 seconds and then leaves the simulation.
+When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%. After landing, assign a gate; the aircraft taxis to that gate for 10 seconds, then unloads passengers for 10 seconds before leaving the simulation.
 
-The game ends when all three starting flights are landed or crashed. New-flight generation is not enabled yet.
+The game ends when all three starting flights are completed or crashed. A flight counts as completed only after it has been removed from the board. New-flight generation is not enabled yet.
 
 
 ## Project structure

@@ -30,10 +30,12 @@
 - Users can exit the simulation at any time, and the simulation should handle this gracefully, ensuring that all resources are cleaned up properly.
 - Phraseology of commands should be realistic and follow standard ATC communication protocols.
 - Commands should be case-insensitive, and the simulation should handle invalid commands gracefully, providing appropriate feedback to the user.
-- There should be an indicator of the number of active flights in the simulation at any given time, and any flights in danger or that have crashed should be clearly indicated to the user, as well as number of flights safely landed and gated.
-- `clear-to-land` completes into a landed state. A landed flight must be assigned one of the fixed gates before unloading.
-- A gated flight unloads passengers for 10 seconds, then is removed from the simulation.
-- The game ends when all 3 starting flights are landed or crashed. New-flight generation is out of scope for now.
+- There should be an indicator of the number of active flights in the simulation at any given time, and any flights needing attention or that have crashed should be clearly indicated to the user, as well as the number of flights completed.
+- `clear-to-land` starts a 15-second landing operation. The flight enters `landing` immediately, and altitude and speed decrease toward zero during the operation before it becomes `landed`.
+- A flight must have a completed runway assignment before `clear-to-land` is accepted.
+- `abort-landing` cancels an active landing and starts a climb/acceleration operation back toward the flight's pre-landing altitude and speed.
+- A landed flight assigned a gate enters `taxiing` for 10 seconds, then becomes `gated` and unloads passengers for 10 seconds before being removed from the simulation.
+- The game ends when all 3 starting flights are completed or crashed. A flight is completed only after it is removed from the board. New-flight generation is out of scope for now.
 - Departures and takeoffs are out of scope.
 - A textual representation of the airport layout should be displayed in the CLI, showing the runways, gates, and the positions of the flights in real-time.
 - Aircraft do not move, land, gate, crash, or change flight values without an explicit controller command or a defined post-landing lifecycle action.

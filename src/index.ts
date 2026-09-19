@@ -30,6 +30,7 @@ const flightCommands = [
   { command: 'gate', usage: 'A1|A2|A3' },
   { command: 'runway', usage: '77L|77R' },
   { command: 'clear-to-land', usage: '' },
+  { command: 'abort-landing', usage: '' },
   { command: 'hold', usage: 'left|right' },
 ];
 const rl = readline.createInterface({

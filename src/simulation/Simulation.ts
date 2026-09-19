@@ -8,13 +8,22 @@ const RUNWAY_COUNT = 2;
 const GATE_COUNT = 3;
 const STARTING_FLIGHT_COUNT = 3;
 const UNLOAD_DURATION_MS = 10000;
+const TAXI_TO_GATE_DURATION_MS = 10000;
+const LANDING_DURATION_MS = 15000;
 const TICK_MS = 1000;
-type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'hold' | 'unload';
+type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'abort-landing' | 'hold' | 'taxi-to-gate' | 'unload';
+type Motion = {
+  startAltitude: number;
+  startSpeed: number;
+  targetAltitude: number;
+  targetSpeed: number;
+};
 type PendingCommand = ActiveCommand & {
   action: PendingAction;
   target: string | number;
   durationMs: number;
   elapsedMs: number;
+  motion?: Motion;
 };
 
 export class Simulation {
@@ -24,6 +33,7 @@ export class Simulation {
   private readonly runways: number;
   private readonly gates: number;
   private readonly finishedFlights = new Set<string>();
+  private completedFlights = 0;
   private gameOver = false;
   private pendingCommands: PendingCommand[] = [];
   private nextCommandId = 1;
@@ -89,6 +99,14 @@ export class Simulation {
     for (const command of this.pendingCommands) {
       command.elapsedMs += elapsedMilliseconds;
       command.progress = Math.min(100, (command.elapsedMs / command.durationMs) * 100);
+      if (command.motion) {
+        const flight = this.getFlight(command.callsign);
+        if (flight) {
+          const ratio = command.progress / 100;
+          flight.altitude = Math.round(command.motion.startAltitude + (command.motion.targetAltitude - command.motion.startAltitude) * ratio);
+          flight.speed = Math.round(command.motion.startSpeed + (command.motion.targetSpeed - command.motion.startSpeed) * ratio);
+        }
+      }
     }
 
     const completedCommands = this.pendingCommands.filter((command) => command.progress >= 100);
@@ -121,6 +139,8 @@ export class Simulation {
         return this.handleRunway(args);
       case 'clear-to-land':
         return this.handleClearToLand(args);
+      case 'abort-landing':
+        return this.handleAbortLanding(args);
       case 'hold':
         return this.handleHold(args);
       case 'pause':
@@ -140,8 +160,7 @@ export class Simulation {
   renderStatusBoard(): string {
     const activeFlights = this.flights.length;
     const dangerFlights = this.flights.filter((flight) => flight.danger).length;
-    const landedFlights = this.flights.filter((flight) => flight.state === 'landed' || flight.state === 'gated').length;
-    const board = renderStatusBoard(this.flights, activeFlights, dangerFlights, landedFlights);
+    const board = renderStatusBoard(this.flights, activeFlights, dangerFlights, this.completedFlights);
     return this.gameOver ? `${board}\n\nGAME OVER - All starting flights are landed or crashed.` : board;
   }
 
@@ -250,8 +269,55 @@ export class Simulation {
 
     const flight = this.getFlight(args[0]);
     if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
+    if (!flight.runway) return { ok: false, message: `${flight.callsign} must be assigned a runway before landing clearance.` };
 
-    return this.queueCommand(flight, 'clear-to-land', '', 'Clear to land', 3000);
+    const result = this.queueCommand(
+      flight,
+      'clear-to-land',
+      '',
+      'Landing',
+      LANDING_DURATION_MS,
+      {
+        startAltitude: flight.altitude,
+        startSpeed: flight.speed,
+        targetAltitude: 0,
+        targetSpeed: 0,
+      },
+    );
+    flight.state = 'landing';
+    flight.statusMessage = 'Landing in progress';
+    flight.danger = false;
+    return result;
+  }
+
+  private handleAbortLanding(args: string[]): CommandResult {
+    if (!args.length) return { ok: false, message: 'Usage: abort-landing <callsign>' };
+
+    const flight = this.getFlight(args[0]);
+    if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
+
+    const landingCommand = this.pendingCommands.find(
+      (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === 'clear-to-land',
+    );
+    if (!landingCommand?.motion) return { ok: false, message: `${flight.callsign} is not currently landing.` };
+
+    this.pendingCommands = this.pendingCommands.filter((command) => command !== landingCommand);
+    const result = this.queueCommand(
+      flight,
+      'abort-landing',
+      '',
+      'Abort landing - climbing',
+      LANDING_DURATION_MS,
+      {
+        startAltitude: flight.altitude,
+        startSpeed: flight.speed,
+        targetAltitude: landingCommand.motion.startAltitude,
+        targetSpeed: landingCommand.motion.startSpeed,
+      },
+    );
+    flight.state = 'climbing';
+    flight.statusMessage = 'Landing aborted - climbing';
+    return result;
   }
 
   private handleHold(args: string[]): CommandResult {
@@ -269,6 +335,7 @@ export class Simulation {
     target: string | number,
     description: string,
     durationMs: number,
+    motion?: Motion,
   ): CommandResult {
     const command: PendingCommand = {
       id: this.nextCommandId,
@@ -279,6 +346,7 @@ export class Simulation {
       target,
       durationMs,
       elapsedMs: 0,
+      motion,
     };
     this.nextCommandId += 1;
     this.pendingCommands.push(command);
@@ -304,41 +372,61 @@ export class Simulation {
         break;
       case 'gate':
         flight.gate = command.target as string;
+        flight.state = 'taxiing';
+        flight.statusMessage = `Taxiing to gate ${flight.gate}`;
+        this.pendingCommands.push({
+          id: this.nextCommandId,
+          callsign: flight.callsign,
+          description: `Taxiing to gate ${flight.gate}`,
+          progress: 0,
+          action: 'taxi-to-gate',
+          target: flight.gate,
+          durationMs: TAXI_TO_GATE_DURATION_MS,
+          elapsedMs: 0,
+        });
+        this.nextCommandId += 1;
+        break;
+      case 'taxi-to-gate':
         flight.state = 'gated';
         flight.statusMessage = `Assigned to gate ${flight.gate}`;
+        this.pendingCommands.push({
+          id: this.nextCommandId,
+          callsign: flight.callsign,
+          description: 'Unloading passengers',
+          progress: 0,
+          action: 'unload',
+          target: flight.gate ?? '',
+          durationMs: UNLOAD_DURATION_MS,
+          elapsedMs: 0,
+        });
+        this.nextCommandId += 1;
         break;
       case 'runway':
         flight.runway = command.target as string;
         flight.statusMessage = `Assigned to runway ${flight.runway}`;
         break;
       case 'clear-to-land':
+        flight.altitude = 0;
+        flight.speed = 0;
         flight.state = 'landed';
         flight.statusMessage = 'Landed - awaiting gate assignment';
         flight.danger = false;
-        this.finishedFlights.add(flight.callsign);
+        break;
+      case 'abort-landing':
+        flight.state = 'approach';
+        flight.statusMessage = 'Landing aborted - returning to approach';
         break;
       case 'hold':
         flight.state = 'holding';
         flight.statusMessage = `Holding ${command.target as string} pattern`;
         break;
       case 'unload':
+        this.completedFlights += 1;
+        this.finishedFlights.add(flight.callsign);
         this.flights = this.flights.filter((candidate) => candidate.callsign !== flight.callsign);
         break;
     }
 
-    if (command.action === 'gate') {
-      this.pendingCommands.push({
-        id: this.nextCommandId,
-        callsign: flight.callsign,
-        description: 'Unloading passengers',
-        progress: 0,
-        action: 'unload',
-        target: flight.gate ?? '',
-        durationMs: UNLOAD_DURATION_MS,
-        elapsedMs: 0,
-      });
-      this.nextCommandId += 1;
-    }
   }
 
   private detectDanger(): void {
@@ -404,6 +492,7 @@ export class Simulation {
       '  <callsign> gate <A1|A2|A3>',
       '  <callsign> runway <77L|77R>',
       '  <callsign> clear-to-land',
+      '  <callsign> abort-landing',
       '  <callsign> hold <left|right>',
       '  speed <callsign> <knots>',
       '  heading <callsign> <degrees>',
