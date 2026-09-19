@@ -61,6 +61,7 @@ const renderScreen = (showPrompt: boolean): void => {
   const screen = [
     'ATC CLI Simulation',
     simulation.renderStatusBoard(),
+    simulation.renderActiveCommands(),
     simulation.renderAirportLayout(),
     lastMessage ? `\n${lastMessage}` : '',
   ].filter(Boolean).join('\n');

@@ -1,9 +1,16 @@
 import { parseCommand } from '../cli/commandParser.js';
-import { renderAirportLayout, renderFlightDetail, renderStatusBoard } from '../cli/renderer.js';
-import type { CommandResult, Difficulty, Flight, SimulationOptions } from '../types.js';
+import { renderActiveCommands, renderAirportLayout, renderFlightDetail, renderStatusBoard } from '../cli/renderer.js';
+import type { ActiveCommand, CommandResult, Difficulty, Flight, SimulationOptions } from '../types.js';
 
 const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
 const AIRLINE_PREFIXES = ['UAL', 'DLH', 'BAW', 'SWA', 'AAL', 'NKS'];
+type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'hold';
+type PendingCommand = ActiveCommand & {
+  action: PendingAction;
+  target: string | number;
+  durationMs: number;
+  elapsedMs: number;
+};
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -14,6 +21,8 @@ export class Simulation {
   private readonly tickMs: number;
   private readonly maxFlights: number;
   private readonly difficulty: Difficulty;
+  private pendingCommands: PendingCommand[] = [];
+  private nextCommandId = 1;
 
   constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3, difficulty = 'normal' }: SimulationOptions = {}) {
     this.runways = runways;
@@ -48,6 +57,10 @@ export class Simulation {
     return this.difficulty;
   }
 
+  getActiveCommands(): ActiveCommand[] {
+    return this.pendingCommands.map(({ id, callsign, description, progress }) => ({ id, callsign, description, progress }));
+  }
+
   isPaused(): boolean {
     return this.paused;
   }
@@ -65,41 +78,17 @@ export class Simulation {
     this.paused = true;
   }
 
-  step(deltaSeconds = this.tickMs / 1000): void {
+  step(): void {
     if (!this.running || this.paused) return;
-
-    const dangerFlights = this.flights.filter((flight) => flight.danger);
-    if (dangerFlights.length > 0) {
-      for (const flight of dangerFlights) {
-        flight.altitude = Math.max(0, flight.altitude - 300 * deltaSeconds);
-        flight.speed = Math.max(90, flight.speed - 15 * deltaSeconds);
-        flight.statusMessage = 'Caution: proximity warning';
-      }
+    for (const command of this.pendingCommands) {
+      command.elapsedMs += this.tickMs;
+      command.progress = Math.min(100, (command.elapsedMs / command.durationMs) * 100);
     }
 
-    for (const flight of this.flights) {
-      if (flight.state === 'crashed' || flight.state === 'landed' || flight.state === 'gated') continue;
-
-      flight.progress = Math.min(100, flight.progress + 2 * deltaSeconds);
-      flight.altitude = Math.max(0, flight.altitude + (flight.state === 'climbing' ? 25 : -25) * deltaSeconds);
-      flight.speed = Math.max(100, Math.min(400, flight.speed + (flight.state === 'holding' ? -5 : 2) * deltaSeconds));
-      flight.heading = (flight.heading + 3 * deltaSeconds) % 360;
-
-      if (flight.altitude <= 0) {
-        flight.state = 'crashed';
-        flight.statusMessage = 'Crash report: aircraft lost control';
-        flight.danger = true;
-      }
-
-      if (flight.progress >= 100) {
-        flight.state = flight.state === 'approach' ? 'landed' : 'gated';
-        flight.statusMessage = flight.state === 'landed' ? 'Touchdown complete' : 'Parked at gate';
-        flight.progress = 100;
-      }
-
-      if (flight.state === 'holding') {
-        flight.statusMessage = 'Holding pattern assigned';
-      }
+    const completedCommands = this.pendingCommands.filter((command) => command.progress >= 100);
+    this.pendingCommands = this.pendingCommands.filter((command) => command.progress < 100);
+    for (const command of completedCommands) {
+      this.applyPendingCommand(command);
     }
 
     this.detectDanger();
@@ -152,6 +141,10 @@ export class Simulation {
     return renderAirportLayout(this.flights, this.runways, this.gates);
   }
 
+  renderActiveCommands(): string {
+    return renderActiveCommands(this.getActiveCommands());
+  }
+
   private handleStatus(args: string[]): CommandResult {
     if (!args.length || args[0] === 'all') {
       return { ok: true, message: `${this.renderStatusBoard()}\n\n${this.renderAirportLayout()}` };
@@ -175,11 +168,8 @@ export class Simulation {
     if (Number.isNaN(speed)) return { ok: false, message: 'Speed must be a number.' };
 
     const delta = Math.abs(speed - flight.speed);
-    if (delta > 50) return { ok: false, message: 'Speed changes are capped at 50 knots per second.' };
-
-    flight.speed = speed;
-    flight.statusMessage = `Speed adjusted to ${speed} kt`;
-    return { ok: true, message: `${flight.callsign} now flying at ${speed} kt.` };
+    const durationMs = Math.max(1000, Math.ceil((delta / 50) * 1000));
+    return this.queueCommand(flight, 'speed', speed, `Speed to ${speed} kt`, durationMs);
   }
 
   private handleHeading(args: string[]): CommandResult {
@@ -191,12 +181,9 @@ export class Simulation {
     const heading = Number(rawHeading);
     if (Number.isNaN(heading)) return { ok: false, message: 'Heading must be a number.' };
 
-    const delta = Math.abs(heading - flight.heading);
-    if (delta > 3) return { ok: false, message: 'Turn rate is capped at 3 degrees per second.' };
-
-    flight.heading = heading;
-    flight.statusMessage = `Heading adjusted to ${heading}°`;
-    return { ok: true, message: `${flight.callsign} heading set to ${heading}°.` };
+    const turnDistance = Math.abs(((heading - flight.heading + 540) % 360) - 180);
+    const durationMs = Math.max(1000, Math.ceil((turnDistance / 3) * 1000));
+    return this.queueCommand(flight, 'heading', heading, `Heading to ${heading}°`, durationMs);
   }
 
   private handleAltitude(args: string[]): CommandResult {
@@ -211,9 +198,7 @@ export class Simulation {
     const delta = Math.abs(altitude - flight.altitude);
     if (delta > 1500) return { ok: false, message: 'Altitude changes are capped at 1500 ft/min.' };
 
-    flight.altitude = altitude;
-    flight.statusMessage = `Altitude adjusted to ${altitude} ft`;
-    return { ok: true, message: `${flight.callsign} altitude set to ${altitude} ft.` };
+    return this.queueCommand(flight, 'altitude', altitude, `Altitude to ${altitude} ft`, 3000);
   }
 
   private handleGate(args: string[]): CommandResult {
@@ -222,10 +207,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    flight.gate = gate;
-    flight.state = 'gated';
-    flight.statusMessage = `Assigned to gate ${gate}`;
-    return { ok: true, message: `${flight.callsign} assigned to gate ${gate}.` };
+    return this.queueCommand(flight, 'gate', gate, `Gate assignment ${gate}`, 2000);
   }
 
   private handleRunway(args: string[]): CommandResult {
@@ -234,9 +216,7 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    flight.runway = runway;
-    flight.statusMessage = `Assigned to runway ${runway}`;
-    return { ok: true, message: `${flight.callsign} assigned to runway ${runway}.` };
+    return this.queueCommand(flight, 'runway', runway, `Runway assignment ${runway}`, 2000);
   }
 
   private handleClearToLand(args: string[]): CommandResult {
@@ -245,10 +225,7 @@ export class Simulation {
     const flight = this.getFlight(args[0]);
     if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
 
-    flight.state = 'approach';
-    flight.statusMessage = 'Cleared to land';
-    flight.danger = false;
-    return { ok: true, message: `${flight.callsign} cleared to land.` };
+    return this.queueCommand(flight, 'clear-to-land', '', 'Clear to land', 3000);
   }
 
   private handleHold(args: string[]): CommandResult {
@@ -257,9 +234,67 @@ export class Simulation {
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
-    flight.state = 'holding';
-    flight.statusMessage = `Holding ${side} pattern`;
-    return { ok: true, message: `${flight.callsign} instructed to hold ${side} pattern.` };
+    return this.queueCommand(flight, 'hold', side, `Hold ${side} pattern`, 2000);
+  }
+
+  private queueCommand(
+    flight: Flight,
+    action: PendingAction,
+    target: string | number,
+    description: string,
+    durationMs: number,
+  ): CommandResult {
+    const command: PendingCommand = {
+      id: this.nextCommandId,
+      callsign: flight.callsign,
+      description,
+      progress: 0,
+      action,
+      target,
+      durationMs,
+      elapsedMs: 0,
+    };
+    this.nextCommandId += 1;
+    this.pendingCommands.push(command);
+    return { ok: true, message: `Command accepted for ${flight.callsign}: ${description}.` };
+  }
+
+  private applyPendingCommand(command: PendingCommand): void {
+    const flight = this.getFlight(command.callsign);
+    if (!flight) return;
+
+    switch (command.action) {
+      case 'speed':
+        flight.speed = command.target as number;
+        flight.statusMessage = `Speed adjusted to ${flight.speed} kt`;
+        break;
+      case 'heading':
+        flight.heading = command.target as number;
+        flight.statusMessage = `Heading adjusted to ${flight.heading}°`;
+        break;
+      case 'altitude':
+        flight.altitude = command.target as number;
+        flight.statusMessage = `Altitude adjusted to ${flight.altitude} ft`;
+        break;
+      case 'gate':
+        flight.gate = command.target as string;
+        flight.state = 'gated';
+        flight.statusMessage = `Assigned to gate ${flight.gate}`;
+        break;
+      case 'runway':
+        flight.runway = command.target as string;
+        flight.statusMessage = `Assigned to runway ${flight.runway}`;
+        break;
+      case 'clear-to-land':
+        flight.state = 'approach';
+        flight.statusMessage = 'Cleared to land';
+        flight.danger = false;
+        break;
+      case 'hold':
+        flight.state = 'holding';
+        flight.statusMessage = `Holding ${command.target as string} pattern`;
+        break;
+    }
   }
 
   private detectDanger(): void {
@@ -300,7 +335,6 @@ export class Simulation {
         x: Math.random() * 30,
         y: Math.random() * 30,
         state: i % 2 === 0 ? 'approach' : 'holding',
-        progress: 20 + Math.random() * 50,
         statusMessage: 'Tracking inbound traffic',
         danger: false,
       });

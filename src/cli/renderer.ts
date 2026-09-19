@@ -1,5 +1,5 @@
 import { colorLabels, progressBar } from './color.js';
-import type { Flight } from '../types.js';
+import type { ActiveCommand, Flight } from '../types.js';
 
 const { danger, warning, success, info, accent, bold } = colorLabels();
 
@@ -25,8 +25,8 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     `${bold('ATC STATUS')}`,
     `${info(`Active flights: ${activeFlights}`)} | ${danger(`Danger: ${dangerFlights}`)} | ${success(`Landed: ${landedFlights}`)}`,
     '',
-    'CALLSIGN   STATE        ALT   SPD   HDG   RWY   PROGRESS',
-    '---------------------------------------------------------',
+    'CALLSIGN   STATE        ALT   SPD   HDG   RWY',
+    '----------------------------------------------',
   ];
 
   for (const flight of flights) {
@@ -37,11 +37,24 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
       info(flight.state.toUpperCase());
 
     const runwayText = flight.runway ?? '-';
-    const progress = progressBar(flight.progress, 10);
-
     lines.push(
-      `${flight.callsign.padEnd(9)} ${stateText.padEnd(12)} ${String(flight.altitude).padStart(5)} ${String(flight.speed).padStart(4)} ${String(flight.heading).padStart(4)} ${runwayText.padEnd(4)} ${progress}`
+      `${flight.callsign.padEnd(9)} ${stateText.padEnd(12)} ${String(flight.altitude).padStart(5)} ${String(flight.speed).padStart(4)} ${String(flight.heading).padStart(4)} ${runwayText.padEnd(4)}`
     );
+  }
+
+  return lines.join('\n');
+}
+
+export function renderActiveCommands(commands: ActiveCommand[]): string {
+  const lines = ['IN PROGRESS'];
+
+  if (!commands.length) {
+    lines.push('  None');
+    return lines.join('\n');
+  }
+
+  for (const command of commands) {
+    lines.push(`  #${command.id} ${command.callsign} ${command.description} ${progressBar(command.progress, 16)}`);
   }
 
   return lines.join('\n');
@@ -64,6 +77,5 @@ export function renderFlightDetail(flight: Flight): string {
     `Gate: ${flight.gate ?? 'none'}`,
     `Runway: ${flight.runway ?? 'none'}`,
     `Status: ${flight.statusMessage}`,
-    `Progress: ${progressBar(flight.progress, 16)}`,
   ].join('\n');
 }

@@ -20,10 +20,16 @@ export interface Flight {
   gate?: string;
   runway?: string;
   state: FlightState;
-  progress: number;
   statusMessage: string;
   danger: boolean;
   approachRunway?: string;
+}
+
+export interface ActiveCommand {
+  id: number;
+  callsign: string;
+  description: string;
+  progress: number;
 }
 
 export interface SimulationOptions {
