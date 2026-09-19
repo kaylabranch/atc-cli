@@ -2,7 +2,6 @@
 
 import * as readline from 'node:readline';
 import { Simulation } from './simulation/Simulation.js';
-import type { Difficulty } from './types.js';
 
 const args = process.argv.slice(2);
 const valueFor = (flag: string): string | undefined => {
@@ -15,29 +14,15 @@ if (args.includes('--help') || args.includes('-h')) {
     'ATC CLI Simulation',
     '',
     'Options:',
-    '  --difficulty <easy|normal|hard>  Set the starting traffic level (default: normal)',
     '  --runways <number>                Configure available runways (default: 2)',
     '  --gates <number>                  Configure available gates (default: 4)',
     '  --flight-count <number>           Configure inbound flights (default: 3)',
     '  --tick-ms <milliseconds>          Set display/update interval (default: 1000)',
     '  --help                            Show this help',
-    '',
-    'Difficulty presets:',
-    '  easy    2 flights, slower update interval',
-    '  normal  3 flights, standard update interval',
-    '  hard    5 flights, faster update interval',
   ].join('\n'));
   process.exit(0);
 }
 
-const difficultyValue = valueFor('--difficulty')?.toLowerCase() ?? 'normal';
-const difficulty: Difficulty = difficultyValue === 'easy' || difficultyValue === 'hard' ? difficultyValue : 'normal';
-const defaults: Record<Difficulty, { tickMs: number; flightCount: number }> = {
-  easy: { tickMs: 1500, flightCount: 2 },
-  normal: { tickMs: 1000, flightCount: 3 },
-  hard: { tickMs: 750, flightCount: 5 },
-};
-const preset = defaults[difficulty];
 const numberFor = (flag: string, fallback: number): number => {
   const value = Number(valueFor(flag));
   return Number.isFinite(value) && value > 0 ? value : fallback;
@@ -45,10 +30,10 @@ const numberFor = (flag: string, fallback: number): number => {
 
 const runways = numberFor('--runways', 2);
 const gates = numberFor('--gates', 4);
-const tickMs = numberFor('--tick-ms', preset.tickMs);
-const flightCount = numberFor('--flight-count', preset.flightCount);
+const tickMs = numberFor('--tick-ms', 1000);
+const flightCount = numberFor('--flight-count', 3);
 
-const simulation = new Simulation({ runways, gates, tickMs, flightCount, difficulty });
+const simulation = new Simulation({ runways, gates, tickMs, flightCount });
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -79,9 +64,14 @@ const renderScreen = (showPrompt: boolean): void => {
 };
 
 rl.setPrompt('ATC> ');
+let lastTickAt = Date.now();
 const interval = setInterval(() => {
+  const now = Date.now();
+  const elapsedMilliseconds = now - lastTickAt;
+  lastTickAt = now;
+
   if (simulation.isRunning() && !simulation.isPaused()) {
-    simulation.step();
+    simulation.step(elapsedMilliseconds);
     renderScreen(true);
   }
 }, tickMs);

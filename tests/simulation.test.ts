@@ -29,8 +29,25 @@ describe('simulation behavior', () => {
     expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
 
     sim.step();
+    sim.step();
+    sim.step();
     expect(sim.getFlight(flight.callsign)?.speed).toBe(targetSpeed);
     expect(sim.getActiveCommands()).toHaveLength(0);
+  });
+
+  it('uses elapsed time for a large speed change', () => {
+    const sim = new Simulation({ tickMs: 1000, flightCount: 1 });
+    const flight = sim.getFlights()[0];
+    const targetSpeed = flight.speed + 100;
+
+    sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
+    sim.step(1000);
+
+    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(5);
+    expect(flight.speed).not.toBe(targetSpeed);
+
+    sim.step(19000);
+    expect(flight.speed).toBe(targetSpeed);
   });
 
   it('accepts a new heading and applies the turn rate to command duration', () => {
@@ -76,9 +93,4 @@ describe('simulation behavior', () => {
     expect(flight).toEqual(initialFlight);
   });
 
-  it('stores the selected difficulty', () => {
-    const sim = new Simulation({ difficulty: 'hard' });
-
-    expect(sim.getDifficulty()).toBe('hard');
-  });
 });

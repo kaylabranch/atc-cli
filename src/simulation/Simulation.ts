@@ -1,6 +1,6 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderActiveCommands, renderAirportLayout, renderFlightDetail, renderStatusBoard } from '../cli/renderer.js';
-import type { ActiveCommand, CommandResult, Difficulty, Flight, SimulationOptions } from '../types.js';
+import type { ActiveCommand, CommandResult, Flight, SimulationOptions } from '../types.js';
 
 const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
 const AIRLINE_PREFIXES = ['UAL', 'DLH', 'BAW', 'SWA', 'AAL', 'NKS'];
@@ -20,16 +20,14 @@ export class Simulation {
   private readonly gates: number;
   private readonly tickMs: number;
   private readonly maxFlights: number;
-  private readonly difficulty: Difficulty;
   private pendingCommands: PendingCommand[] = [];
   private nextCommandId = 1;
 
-  constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3, difficulty = 'normal' }: SimulationOptions = {}) {
+  constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3 }: SimulationOptions = {}) {
     this.runways = runways;
     this.gates = gates;
     this.tickMs = tickMs;
     this.maxFlights = flightCount;
-    this.difficulty = difficulty;
     this.generateFlights();
   }
 
@@ -53,10 +51,6 @@ export class Simulation {
     return this.tickMs;
   }
 
-  getDifficulty(): Difficulty {
-    return this.difficulty;
-  }
-
   getActiveCommands(): ActiveCommand[] {
     return this.pendingCommands.map(({ id, callsign, description, progress }) => ({ id, callsign, description, progress }));
   }
@@ -78,10 +72,10 @@ export class Simulation {
     this.paused = true;
   }
 
-  step(): void {
+  step(elapsedMilliseconds = this.tickMs): void {
     if (!this.running || this.paused) return;
     for (const command of this.pendingCommands) {
-      command.elapsedMs += this.tickMs;
+      command.elapsedMs += elapsedMilliseconds;
       command.progress = Math.min(100, (command.elapsedMs / command.durationMs) * 100);
     }
 
@@ -168,7 +162,7 @@ export class Simulation {
     if (Number.isNaN(speed)) return { ok: false, message: 'Speed must be a number.' };
 
     const delta = Math.abs(speed - flight.speed);
-    const durationMs = Math.max(1000, Math.ceil((delta / 50) * 1000));
+    const durationMs = Math.max(1000, Math.ceil((delta / 5) * 1000));
     return this.queueCommand(flight, 'speed', speed, `Speed to ${speed} kt`, durationMs);
   }
 

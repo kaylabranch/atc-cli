@@ -56,21 +56,15 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 
 ## Configuration
 
-Run `npm run dev -- --help` to see all startup options. Difficulty presets configure the initial traffic level and update interval:
-
-```bash
-npm run dev -- --difficulty easy
-npm run dev -- --difficulty normal
-npm run dev -- --difficulty hard
-```
-
-You can combine a difficulty preset with explicit settings. Explicit values override the preset:
+Run `npm run dev -- --help` to see all startup options. The simulation uses one standard speed model for all sessions:
 
 ```bash
 npm run dev -- --runways 3 --gates 5 --flight-count 4 --tick-ms 500
 ```
 
-The default simulation uses 2 runways, 4 gates, 3 flights, and a 1000 ms display update interval. Display updates do not move aircraft; flight changes happen through controller commands.
+The default simulation uses 2 runways, 4 gates, 3 flights, and a 1000 ms display update interval. The `--tick-ms` option changes display refresh frequency only. Display updates do not move aircraft; flight changes happen through controller commands.
+
+Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
 
 When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%.
 
@@ -95,6 +89,6 @@ tests/
 ## Notes
 
 - Climb and descent rates are modeled around 1500 ft/min.
-- Speed commands complete at a rate of 50 knots per second.
+- Speed commands complete at a rate of 5 knots per second.
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
