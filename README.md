@@ -8,6 +8,7 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 - Randomized flight generation with unique callsigns
 - Configurable runways, gates, flight count, and sim tick rate
 - Real-time ATC status board
+- In-place terminal updates that preserve typed input
 - ASCII airport layout
 - Speed, heading, altitude, gate, runway, and landing controls
 - Collision and danger detection
@@ -54,11 +55,23 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
 
 ## Configuration
 
-You can start with custom settings:
+Run `npm run dev -- --help` to see all startup options. Difficulty presets configure the initial traffic level and update interval:
+
+```bash
+npm run dev -- --difficulty easy
+npm run dev -- --difficulty normal
+npm run dev -- --difficulty hard
+```
+
+You can combine a difficulty preset with explicit settings. Explicit values override the preset:
 
 ```bash
 npm run dev -- --runways 3 --gates 5 --flight-count 4 --tick-ms 500
 ```
+
+The default simulation uses 2 runways, 4 gates, 3 flights, and a 1000 ms update interval. Flight movement is calculated per second, so changing the update interval does not make aircraft move faster.
+
+When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while flights move.
 
 ## Project structure
 

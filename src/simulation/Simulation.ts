@@ -1,6 +1,6 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderAirportLayout, renderFlightDetail, renderStatusBoard } from '../cli/renderer.js';
-import type { CommandResult, Flight, SimulationOptions } from '../types.js';
+import type { CommandResult, Difficulty, Flight, SimulationOptions } from '../types.js';
 
 const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
 const AIRLINE_PREFIXES = ['UAL', 'DLH', 'BAW', 'SWA', 'AAL', 'NKS'];
@@ -13,12 +13,14 @@ export class Simulation {
   private readonly gates: number;
   private readonly tickMs: number;
   private readonly maxFlights: number;
+  private readonly difficulty: Difficulty;
 
-  constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3 }: SimulationOptions = {}) {
+  constructor({ runways = 2, gates = 4, tickMs = 1000, flightCount = 3, difficulty = 'normal' }: SimulationOptions = {}) {
     this.runways = runways;
     this.gates = gates;
     this.tickMs = tickMs;
     this.maxFlights = flightCount;
+    this.difficulty = difficulty;
     this.generateFlights();
   }
 
@@ -42,6 +44,10 @@ export class Simulation {
     return this.tickMs;
   }
 
+  getDifficulty(): Difficulty {
+    return this.difficulty;
+  }
+
   isPaused(): boolean {
     return this.paused;
   }
@@ -59,14 +65,14 @@ export class Simulation {
     this.paused = true;
   }
 
-  step(): void {
+  step(deltaSeconds = this.tickMs / 1000): void {
     if (!this.running || this.paused) return;
 
     const dangerFlights = this.flights.filter((flight) => flight.danger);
     if (dangerFlights.length > 0) {
       for (const flight of dangerFlights) {
-        flight.altitude = Math.max(0, flight.altitude - 200);
-        flight.speed = Math.max(90, flight.speed - 15);
+        flight.altitude = Math.max(0, flight.altitude - 300 * deltaSeconds);
+        flight.speed = Math.max(90, flight.speed - 15 * deltaSeconds);
         flight.statusMessage = 'Caution: proximity warning';
       }
     }
@@ -74,10 +80,10 @@ export class Simulation {
     for (const flight of this.flights) {
       if (flight.state === 'crashed' || flight.state === 'landed' || flight.state === 'gated') continue;
 
-      flight.progress = Math.min(100, flight.progress + 10);
-      flight.altitude = Math.max(0, flight.altitude + (flight.state === 'climbing' ? 1500 : -1500));
-      flight.speed = Math.max(100, Math.min(400, flight.speed + (flight.state === 'holding' ? -5 : 2)));
-      flight.heading = (flight.heading + 3) % 360;
+      flight.progress = Math.min(100, flight.progress + 2 * deltaSeconds);
+      flight.altitude = Math.max(0, flight.altitude + (flight.state === 'climbing' ? 25 : -25) * deltaSeconds);
+      flight.speed = Math.max(100, Math.min(400, flight.speed + (flight.state === 'holding' ? -5 : 2) * deltaSeconds));
+      flight.heading = (flight.heading + 3 * deltaSeconds) % 360;
 
       if (flight.altitude <= 0) {
         flight.state = 'crashed';

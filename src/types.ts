@@ -31,7 +31,10 @@ export interface SimulationOptions {
   gates?: number;
   tickMs?: number;
   flightCount?: number;
+  difficulty?: Difficulty;
 }
+
+export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface CommandResult {
   ok: boolean;

@@ -29,4 +29,22 @@ describe('simulation behavior', () => {
     expect(board).toContain('ATC STATUS');
     expect(board).toContain('CALLSIGN');
   });
+
+  it('scales movement by elapsed time instead of update frequency', () => {
+    const sim = new Simulation({ flightCount: 1, tickMs: 1000 });
+    const flight = sim.getFlights()[0];
+    const initialProgress = flight.progress;
+    const initialHeading = flight.heading;
+
+    sim.step(0.5);
+
+    expect(flight.progress).toBeCloseTo(initialProgress + 1);
+    expect(flight.heading).toBeCloseTo((initialHeading + 1.5) % 360);
+  });
+
+  it('stores the selected difficulty', () => {
+    const sim = new Simulation({ difficulty: 'hard' });
+
+    expect(sim.getDifficulty()).toBe('hard');
+  });
 });
