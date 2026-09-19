@@ -41,13 +41,16 @@ const output = process.stdout;
 const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
 let slashMenuIndex: number | null = null;
+let slashMenuQuery = '';
 let suppressNextSlashMenuUpdate = false;
 let inputHintVisible = false;
 const inputHint = 'callsign command value';
 
+const getSlashMenuOptions = (): typeof flightCommands => flightCommands.filter((item) => item.command.startsWith(slashMenuQuery));
+
 const slashMenuText = (): string => [
   'FLIGHT COMMANDS - use Up/Down to choose',
-  ...flightCommands.map((item, index) => `${index === slashMenuIndex ? '>' : ' '} ${item.command}${item.usage ? ` <${item.usage}>` : ''}`),
+  ...getSlashMenuOptions().map((item, index) => `${index === slashMenuIndex ? '>' : ' '} ${item.command}${item.usage ? ` <${item.usage}>` : ''}`),
 ].join('\n');
 
 const renderSlashMenu = (): void => {
@@ -79,10 +82,11 @@ const setInputLine = (line: string): void => {
 const acceptSlashMenuSelection = (suppressKeypressRefresh: boolean): void => {
   const parts = rl.line.trim().split(/\s+/);
   const selectedCommand = parts[1]?.replace(/^\//, '').toLowerCase();
-  const command = flightCommands.find((item) => item.command === selectedCommand)?.command
-    ?? flightCommands[slashMenuIndex ?? 0].command;
+  const command = getSlashMenuOptions().find((item) => item.command === selectedCommand)?.command
+    ?? getSlashMenuOptions()[slashMenuIndex ?? 0].command;
   setInputLine(`${parts[0]} ${command} `);
   slashMenuIndex = null;
+  slashMenuQuery = '';
   suppressNextSlashMenuUpdate = suppressKeypressRefresh;
   renderScreen(true);
 };
@@ -90,11 +94,18 @@ const acceptSlashMenuSelection = (suppressKeypressRefresh: boolean): void => {
 const updateSlashMenu = (): void => {
   const line = rl.line;
   const previousIndex = slashMenuIndex;
-  const menuMatch = line.match(/^(\S+)\s+(?:[a-z-]*)$/i);
+  const menuMatch = line.match(/^(\S+)\s+([a-z-]*)$/i);
   if (!menuMatch || !simulation.getFlight(menuMatch[1])) {
     slashMenuIndex = null;
-  } else if (slashMenuIndex === null) {
-    slashMenuIndex = 0;
+    slashMenuQuery = '';
+  } else {
+    const query = menuMatch[2].toLowerCase();
+    const queryChanged = query !== slashMenuQuery;
+    slashMenuQuery = query;
+    const optionCount = getSlashMenuOptions().length;
+    slashMenuIndex = optionCount === 0 ? null : queryChanged || slashMenuIndex === null
+      ? 0
+      : Math.min(slashMenuIndex, optionCount - 1);
   }
 
   if (slashMenuIndex !== previousIndex) renderScreen(true);
@@ -142,6 +153,7 @@ rl.on('line', (input) => {
   }
 
   slashMenuIndex = null;
+  slashMenuQuery = '';
   const trimmed = input.trim();
   if (!trimmed) {
     renderScreen(true);
@@ -190,8 +202,9 @@ if (interactiveTerminal) {
     }
 
     if (key.name === 'up' || key.name === 'down') {
+      const optionCount = getSlashMenuOptions().length;
       const direction = key.name === 'up' ? -1 : 1;
-      slashMenuIndex = (slashMenuIndex + direction + flightCommands.length) % flightCommands.length;
+      slashMenuIndex = (slashMenuIndex + direction + optionCount) % optionCount;
       const callsign = rl.line.trim().split(/\s+/)[0];
       setInputLine(`${callsign} ${flightCommands[slashMenuIndex].command} `);
       renderScreen(true);

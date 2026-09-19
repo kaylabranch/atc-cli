@@ -80,7 +80,7 @@ Flight instructions use callsign-first commands:
   UAL123 hold left
   ```
 
-To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Use the Up/Down arrow keys to select a command and press `Enter` or `Tab` to accept it; the command is inserted into the prompt with a trailing space, ready for its value.
+To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Type a command prefix to filter it, such as `UAL123 h` for `heading` and `hold`, or `UAL123 hea` for `heading`. Press `Enter` or `Tab` to accept the highlighted match; the command is inserted into the prompt with a trailing space, ready for its value.
 
 ## Configuration
 
