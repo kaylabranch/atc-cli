@@ -27,20 +27,21 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     `${bold('ATC STATUS')}`,
     `${info(`Active flights: ${activeFlights}`)} | ${danger(`Danger: ${dangerFlights}`)} | ${success(`Landed: ${landedFlights}`)}`,
     '',
-    'CALLSIGN   STATE        ALT   SPD   HDG   RWY',
-    '----------------------------------------------',
+    `${'CALLSIGN'.padEnd(10)} ${'STATE'.padEnd(12)} ${'ALT'.padStart(6)} ${'SPD'.padStart(6)} ${'HDG'.padStart(6)} ${'RWY'.padStart(6)}`,
+    '------------------------------------------------------',
   ];
 
   for (const flight of flights) {
+    const stateValue = flight.state.toUpperCase().padEnd(12);
     const stateText =
-      flight.danger ? danger(flight.state.toUpperCase()) :
-      flight.state === 'landed' || flight.state === 'gated' ? success(flight.state.toUpperCase()) :
-      flight.state === 'holding' || flight.state === 'approach' ? warning(flight.state.toUpperCase()) :
-      info(flight.state.toUpperCase());
+      flight.danger ? danger(stateValue) :
+      flight.state === 'landed' || flight.state === 'gated' ? success(stateValue) :
+      flight.state === 'holding' || flight.state === 'approach' ? warning(stateValue) :
+      info(stateValue);
 
-    const runwayText = flight.runway ?? '-';
+    const runwayText = (flight.runway ?? '-').padStart(6);
     lines.push(
-      `${flight.callsign.padEnd(9)} ${stateText.padEnd(12)} ${String(flight.altitude).padStart(5)} ${String(flight.speed).padStart(4)} ${String(flight.heading).padStart(4)} ${runwayText.padEnd(4)}`
+      `${flight.callsign.padEnd(10)} ${stateText} ${String(Math.round(flight.altitude)).padStart(6)} ${String(Math.round(flight.speed)).padStart(6)} ${String(Math.round(flight.heading)).padStart(5)} ${runwayText}`
     );
   }
 
