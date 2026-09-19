@@ -62,6 +62,20 @@ A terminal-based Air Traffic Control simulation written in TypeScript and Node.j
    exit
    ```
 
+  Flight instructions can also use callsign-first commands:
+
+  ```text
+  UAL123 speed 240
+  UAL123 heading 180
+  UAL123 altitude 12000
+  UAL123 gate A1
+  UAL123 runway 77L
+  UAL123 clear-to-land
+  UAL123 hold left
+  ```
+
+  To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears above the prompt; use the Up/Down arrow keys to select a command. It is inserted into the prompt, and you only need to enter its value.
+
 ## Configuration
 
 Run `npm run dev -- --help` to see all startup options. The simulation uses one standard speed model for all sessions:

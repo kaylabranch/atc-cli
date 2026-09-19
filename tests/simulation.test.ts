@@ -11,6 +11,21 @@ describe('command parsing', () => {
     expect(result.args).toEqual(['UAL123', '240']);
   });
 
+  it('parses callsign-first slash commands', () => {
+    expect(parseCommand('UAL123 /speed 240')).toMatchObject({
+      action: 'speed',
+      args: ['UAL123', '240'],
+    });
+    expect(parseCommand('UAL123 /clear-to-land')).toMatchObject({
+      action: 'clear-to-land',
+      args: ['UAL123'],
+    });
+    expect(parseCommand('UAL123 speed 240')).toMatchObject({
+      action: 'speed',
+      args: ['UAL123', '240'],
+    });
+  });
+
 });
 
 describe('simulation behavior', () => {

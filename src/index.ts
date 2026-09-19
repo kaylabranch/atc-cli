@@ -21,6 +21,15 @@ if (args.includes('--help') || args.includes('-h')) {
 }
 
 const simulation = new Simulation();
+const flightCommands = [
+  { command: 'speed', usage: 'knots' },
+  { command: 'heading', usage: 'degrees' },
+  { command: 'altitude', usage: 'feet' },
+  { command: 'gate', usage: 'A1|A2|A3' },
+  { command: 'runway', usage: '77L|77R' },
+  { command: 'clear-to-land', usage: '' },
+  { command: 'hold', usage: 'left|right' },
+];
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -28,6 +37,43 @@ const rl = readline.createInterface({
 const output = process.stdout;
 const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
+let slashMenuIndex: number | null = null;
+
+const slashMenuText = (): string => [
+  'FLIGHT COMMANDS - use Up/Down to choose',
+  ...flightCommands.map((item, index) => `${index === slashMenuIndex ? '>' : ' '} ${item.command}${item.usage ? ` <${item.usage}>` : ''}`),
+].join('\n');
+
+const renderSlashMenu = (): void => {
+  if (!interactiveTerminal || slashMenuIndex === null) return;
+
+  const menuLines = slashMenuText().split('\n');
+  output.write('\u001b7');
+  output.write(`\u001b[${menuLines.length}A`);
+  for (const line of menuLines) {
+    output.write(`\u001b[2K\r${line}\n`);
+  }
+  output.write('\u001b8');
+};
+
+const setInputLine = (line: string): void => {
+  const interfaceState = rl as readline.Interface & { line: string; cursor: number };
+  interfaceState.line = line;
+  interfaceState.cursor = line.length;
+};
+
+const updateSlashMenu = (): void => {
+  const line = rl.line;
+  const previousIndex = slashMenuIndex;
+  const menuMatch = line.match(/^(\S+)\s+(?:[a-z-]*)$/i);
+  if (!menuMatch || !simulation.getFlight(menuMatch[1])) {
+    slashMenuIndex = null;
+  } else if (slashMenuIndex === null) {
+    slashMenuIndex = 0;
+  }
+
+  if (slashMenuIndex !== previousIndex) renderScreen(true);
+};
 
 const renderScreen = (showPrompt: boolean): void => {
   const content = [
@@ -46,6 +92,7 @@ const renderScreen = (showPrompt: boolean): void => {
 
   if (showPrompt) {
     rl.prompt(true);
+    renderSlashMenu();
   }
 };
 
@@ -63,6 +110,7 @@ const interval = setInterval(() => {
 }, simulation.getTickMs());
 
 rl.on('line', (input) => {
+  slashMenuIndex = null;
   const trimmed = input.trim();
   if (!trimmed) {
     renderScreen(true);
@@ -87,3 +135,23 @@ rl.on('close', () => {
 });
 
 renderScreen(true);
+
+if (interactiveTerminal) {
+  readline.emitKeypressEvents(process.stdin);
+  process.stdin.on('keypress', (_input, key) => {
+    if (slashMenuIndex === null || !key) {
+      setImmediate(updateSlashMenu);
+      return;
+    }
+
+    if (key.name === 'up' || key.name === 'down') {
+      const direction = key.name === 'up' ? -1 : 1;
+      slashMenuIndex = (slashMenuIndex + direction + flightCommands.length) % flightCommands.length;
+      const callsign = rl.line.trim().split(/\s+/)[0];
+      setInputLine(`${callsign} ${flightCommands[slashMenuIndex].command} `);
+      renderScreen(true);
+    } else {
+      setImmediate(updateSlashMenu);
+    }
+  });
+}
