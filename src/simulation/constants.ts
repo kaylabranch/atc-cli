@@ -1,0 +1,9 @@
+export const AIRPORT_NAMES = ['KJFK', 'KSFO', 'KDEN', 'KSEA', 'PHX'];
+export const AIRLINE_PREFIXES = ['UAL', 'DLH', 'BAW', 'SWA', 'AAL', 'NKS'];
+export const RUNWAY_COUNT = 2;
+export const GATE_COUNT = 3;
+export const STARTING_FLIGHT_COUNT = 3;
+export const UNLOAD_DURATION_MS = 10000;
+export const TAXI_TO_GATE_DURATION_MS = 10000;
+export const LANDING_DURATION_MS = 15000;
+export const TICK_MS = 1000;

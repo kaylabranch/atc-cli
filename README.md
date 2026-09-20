@@ -107,6 +107,11 @@ src/
     commandParser.ts
     renderer.ts
   simulation/
+    constants.ts
+    flightFactory.ts
+    lifecycle.ts
+    pendingCommands.ts
+    safety.ts
     Simulation.ts
   index.ts
   types.ts
