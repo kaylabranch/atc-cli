@@ -4,7 +4,15 @@
 
 ## Features
 
-- Altitude cross-section showing height versus distance from the airport
+- Command-line REPL for controlling 3 randomly generated flights with unique callsigns
+- Speed, heading, altitude, gate, runway, clear-to-land, abort-landing, and hold commands, each represented as a pending operation with a progress bar
+- Runway assignment validation with a detailed rejection message calling out exactly which condition (heading, speed trend, altitude trend) is unmet
+- Full landing lifecycle: runway assignment, clearance to land, taxi to gate, and passenger unload before a flight leaves the board
+- Conflict alerts for flights that stray too close together, and mid-air collisions for flights that get even closer
+- Boundary redirection for flights that stray to the edge of the simulation grid
+- Stall detection for airborne flights that lose all airspeed outside of a controlled landing
+- A career outcome (promotion, reprimand, suspension, or termination) once the game ends, based on how many flights crashed
+- Status board, airport layout, grid position map, and altitude cross-section, all refreshed in place
 
 The altitude chart's horizontal axis uses simulation grid units, not miles. Distance is the straight-line distance from the airport reference point.
 ## Tech stack
@@ -44,8 +52,8 @@ The altitude chart's horizontal axis uses simulation grid units, not miles. Dist
    speed UAL123 240
    heading UAL123 180
    altitude UAL123 12000
-    gate UAL123 A1
-    runway UAL123 77L
+   gate UAL123 A1
+   runway UAL123 77L
    clear-to-land UAL123
    hold UAL123 left
    pause
@@ -66,7 +74,6 @@ Flight instructions use callsign-first commands:
   UAL123 heading 180
   UAL123 altitude 12000
   UAL123 gate A1
-  UAL123 runway 77L
   UAL123 runway 77L
   UAL123 clear-to-land
   UAL123 abort-landing
@@ -93,7 +100,7 @@ A flight must be pointed toward the airport and must have completed both a decre
 
 Only one flight may occupy a runway at a time. A runway is released when its flight begins taxiing to a gate and can then be assigned to another flight.
 
-Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
+Command progress uses measured elapsed time between ticks. For example, decreasing speed by 100 knots at 5 knots per second takes 20 seconds, while increasing speed by the same amount at 2.5 knots per second takes 40 seconds, even if a display tick is delayed.
 
 When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%. After landing, assign a gate; the aircraft taxis to that gate for 10 seconds, then unloads passengers for 10 seconds before leaving the simulation.
 
@@ -118,6 +125,7 @@ src/
     constants.ts
     flightFactory.ts
     lifecycle.ts
+    movement.ts
     pendingCommands.ts
     safety.ts
     Simulation.ts
