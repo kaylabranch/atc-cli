@@ -10,6 +10,8 @@ export type FlightState =
   | 'taxiing'
   | 'final';
 
+export type FlightTrend = 'increasing' | 'decreasing' | 'steady';
+
 export interface Flight {
   callsign: string;
   origin: string;
@@ -23,6 +25,8 @@ export interface Flight {
   state: FlightState;
   statusMessage: string;
   danger: boolean;
+  speedTrend: FlightTrend;
+  altitudeTrend: FlightTrend;
   approachRunway?: string;
 }
 

@@ -6,7 +6,8 @@ import { generateFlights } from './flightFactory.js';
 import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
-import { detectDanger, isRunwayAvailable } from './safety.js';
+import { advanceFlightMovement } from './movement.js';
+import { canBeAssignedRunway, detectDanger, isRunwayAvailable } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -86,6 +87,7 @@ export class Simulation {
       });
     }
 
+    advanceFlightMovement(this.flights, elapsedMilliseconds);
     detectDanger(this.flights);
     this.checkGameOver();
   }
@@ -210,7 +212,8 @@ export class Simulation {
     const delta = Math.abs(altitude - flight.altitude);
     if (delta > 1500) return { ok: false, message: 'Altitude changes are capped at 1500 ft/min.' };
 
-    return this.queueCommand(flight, 'altitude', altitude, `Altitude to ${altitude} ft`, 3000);
+    const durationMs = Math.max(1000, Math.ceil((delta / 1500) * 60000));
+    return this.queueCommand(flight, 'altitude', altitude, `Altitude to ${altitude} ft`, durationMs);
   }
 
   private handleGate(args: string[]): CommandResult {
@@ -232,6 +235,9 @@ export class Simulation {
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
     const normalizedRunway = runway.toUpperCase();
     if (!/^(77L|77R)$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be 77L or 77R.' };
+    if (!canBeAssignedRunway(flight)) {
+      return { ok: false, message: `${flight.callsign} must be heading toward the airport while descending and decelerating.` };
+    }
     if (!isRunwayAvailable(this.flights, this.pendingCommands.all, normalizedRunway, flight.callsign)) {
       return { ok: false, message: `Runway ${normalizedRunway} is currently occupied.` };
     }

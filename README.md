@@ -83,11 +83,13 @@ Run `npm run dev -- --help` to see all startup options. The simulation uses one 
 npm run clock-in
 ```
 
-The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. The status table includes runway and gate assignments. Display updates do not move aircraft; flight changes happen through controller commands.
+The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. The status table includes runway and gate assignments. Airborne flights move continuously as time passes using their current speed and heading; headings use aviation convention (`0°` north, `90°` east). Landed, taxiing, and gated flights remain stationary.
 
 Landing takes 15 seconds. During landing, altitude and speed decrease toward zero. Use `abort-landing` while a flight is landing to cancel the descent and climb back toward its pre-landing altitude and speed.
 
 Assign a runway before clearing a flight to land. For example, use `UAL123 runway 77L`, wait for the assignment to complete, then use `UAL123 clear-to-land`.
+
+A flight must be pointed toward the airport and must have completed both a decreasing-speed command and a decreasing-altitude command before a runway assignment is accepted.
 
 Only one flight may occupy a runway at a time. A runway is released when its flight begins taxiing to a gate and can then be assigned to another flight.
 

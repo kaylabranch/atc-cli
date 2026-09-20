@@ -7,3 +7,6 @@ export const UNLOAD_DURATION_MS = 10000;
 export const TAXI_TO_GATE_DURATION_MS = 10000;
 export const LANDING_DURATION_MS = 15000;
 export const TICK_MS = 1000;
+export const AIRPORT_X = 16;
+export const AIRPORT_Y = 16;
+export const RUNWAY_HEADING_TOLERANCE_DEGREES = 20;

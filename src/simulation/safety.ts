@@ -1,4 +1,5 @@
 import type { Flight } from '../types.js';
+import { AIRPORT_X, AIRPORT_Y, RUNWAY_HEADING_TOLERANCE_DEGREES } from './constants.js';
 
 export function detectDanger(flights: Flight[]): void {
   for (let firstIndex = 0; firstIndex < flights.length; firstIndex += 1) {
@@ -32,4 +33,20 @@ export function isRunwayAvailable(flights: Flight[], commands: { action: string;
   );
 
   return !assignedToOtherFlight && !pendingForOtherFlight;
+}
+
+export function isHeadingTowardAirport(flight: Flight): boolean {
+  const deltaX = AIRPORT_X - flight.x;
+  const deltaY = AIRPORT_Y - flight.y;
+  if (deltaX === 0 && deltaY === 0) return true;
+
+  const targetHeading = (Math.atan2(deltaX, deltaY) * 180 / Math.PI + 360) % 360;
+  const difference = Math.abs(((flight.heading - targetHeading + 540) % 360) - 180);
+  return difference <= RUNWAY_HEADING_TOLERANCE_DEGREES;
+}
+
+export function canBeAssignedRunway(flight: Flight): boolean {
+  return isHeadingTowardAirport(flight)
+    && flight.speedTrend === 'decreasing'
+    && flight.altitudeTrend === 'decreasing';
 }

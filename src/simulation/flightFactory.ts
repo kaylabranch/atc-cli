@@ -19,6 +19,8 @@ export function generateFlights(): Flight[] {
       state: index % 2 === 0 ? 'approach' : 'holding',
       statusMessage: 'Tracking inbound traffic',
       danger: false,
+      speedTrend: 'steady',
+      altitudeTrend: 'steady',
     };
   });
 }

@@ -17,6 +17,7 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
 
   switch (command.action) {
     case 'speed':
+      flight.speedTrend = trendOf(flight.speed, command.target as number);
       flight.speed = command.target as number;
       flight.statusMessage = `Speed adjusted to ${flight.speed} kt`;
       break;
@@ -25,6 +26,7 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
       flight.statusMessage = `Heading adjusted to ${flight.heading}°`;
       break;
     case 'altitude':
+      flight.altitudeTrend = trendOf(flight.altitude, command.target as number);
       flight.altitude = command.target as number;
       flight.statusMessage = `Altitude adjusted to ${flight.altitude} ft`;
       break;
@@ -68,4 +70,10 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
       context.flights.splice(context.flights.indexOf(flight), 1);
       break;
   }
+}
+
+function trendOf(currentValue: number, targetValue: number): Flight['speedTrend'] {
+  if (targetValue < currentValue) return 'decreasing';
+  if (targetValue > currentValue) return 'increasing';
+  return 'steady';
 }
