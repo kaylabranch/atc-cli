@@ -75,10 +75,27 @@ export function renderAltitudeChart(flights: Flight[]): string {
     const altitude = Math.round(ALTITUDE_CHART_MAX - (row / (ALTITUDE_CHART_HEIGHT - 1)) * ALTITUDE_CHART_MAX);
     lines.push(`${String(altitude).padStart(5)} |${chart[row].join('')}`);
   }
-  lines.push(`    0 +${'-'.repeat(ALTITUDE_CHART_WIDTH)}>`);
-  lines.push('      0       5       10      15      20      25u');
+  lines.push(`      +${'-'.repeat(ALTITUDE_CHART_WIDTH)}>`);
+  lines.push(renderDistanceAxisLabels());
 
   return lines.join('\n');
+}
+
+function renderDistanceAxisLabels(): string {
+  const prefixWidth = 7;
+  const totalWidth = prefixWidth + ALTITUDE_CHART_WIDTH + 1;
+  const chars = Array.from({ length: totalWidth }, () => ' ');
+
+  for (let value = 0; value <= DISTANCE_CHART_MAX; value += 5) {
+    const column = prefixWidth + Math.round((value / DISTANCE_CHART_MAX) * ALTITUDE_CHART_WIDTH);
+    const label = String(value);
+    const start = Math.min(column, totalWidth - label.length);
+    for (let index = 0; index < label.length; index += 1) {
+      chars[start + index] = label[index];
+    }
+  }
+
+  return chars.join('');
 }
 
 export function renderSideBySide(left: string, right: string, gap = 4): string {
@@ -111,9 +128,9 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     const stateValue = flight.state.toUpperCase().padEnd(12);
     const stateText =
       flight.danger ? danger(stateValue) :
-      flight.state === 'landed' || flight.state === 'gated' ? success(stateValue) :
-      flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(stateValue) :
-      info(stateValue);
+        flight.state === 'landed' || flight.state === 'gated' ? success(stateValue) :
+          flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(stateValue) :
+            info(stateValue);
 
     const runwayText = (flight.runway ?? '-').padStart(6);
     const gateText = (flight.gate ?? '-').padStart(6);
@@ -143,9 +160,9 @@ export function renderActiveCommands(commands: ActiveCommand[]): string {
 export function renderFlightDetail(flight: Flight): string {
   const stateText =
     flight.danger ? danger(flight.state.toUpperCase()) :
-    flight.state === 'landed' || flight.state === 'gated' ? success(flight.state.toUpperCase()) :
-    flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(flight.state.toUpperCase()) :
-    info(flight.state.toUpperCase());
+      flight.state === 'landed' || flight.state === 'gated' ? success(flight.state.toUpperCase()) :
+        flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(flight.state.toUpperCase()) :
+          info(flight.state.toUpperCase());
 
   return [
     bold(`Flight ${flight.callsign}`),
