@@ -17,3 +17,5 @@ export const GRID_MAX_COORDINATE = 30;
 export const SPEED_DECREASE_RATE_KT_PER_SEC = 5;
 export const SPEED_INCREASE_RATE_KT_PER_SEC = 2.5;
 export const ALTITUDE_RATE_FT_PER_SEC = 250;
+export const MIN_SPEED_KTS = 120;
+export const MAX_SPEED_KTS = 600;

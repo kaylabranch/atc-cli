@@ -1,13 +1,13 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
-import { ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
+import { ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS, MAX_SPEED_KTS, MIN_SPEED_KTS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
 import { generateFlights } from './flightFactory.js';
 import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
-import { detectDanger, getRunwayAssignmentIssues, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
+import { detectDanger, detectStalledFlights, getRunwayAssignmentIssues, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -90,6 +90,11 @@ export class Simulation {
 
     advanceFlightMovement(this.flights, elapsedMilliseconds);
     redirectFlightsAtBoundary(this.flights);
+    const stalledThisTick = detectStalledFlights(this.flights);
+    for (const flight of stalledThisTick) {
+      this.crashedFlights += 1;
+      this.finishedFlights.add(flight.callsign);
+    }
     const crashedThisTick = detectDanger(this.flights);
     for (const flight of crashedThisTick) {
       this.crashedFlights += 1;
@@ -189,6 +194,9 @@ export class Simulation {
 
     const speed = Math.round(Number(rawSpeed));
     if (Number.isNaN(speed)) return { ok: false, message: 'Speed must be a number.' };
+    if (speed < MIN_SPEED_KTS || speed > MAX_SPEED_KTS) {
+      return { ok: false, message: `Speed must be between ${MIN_SPEED_KTS} and ${MAX_SPEED_KTS} kt.` };
+    }
 
     const delta = Math.abs(speed - flight.speed);
     const rate = speed < flight.speed ? SPEED_DECREASE_RATE_KT_PER_SEC : SPEED_INCREASE_RATE_KT_PER_SEC;

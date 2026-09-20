@@ -48,7 +48,6 @@ describe('simulation behavior', () => {
     const targetSpeed = initialSpeed + 10;
 
     const outcome = sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
-
     expect(outcome.ok).toBe(true);
     expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
     expect(sim.getActiveCommands()).toHaveLength(1);
@@ -81,6 +80,7 @@ describe('simulation behavior', () => {
   it('completes a speed decrease faster than an equivalent increase', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
+    flight.speed = 300;
     const targetSpeed = flight.speed - 100;
 
     sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
@@ -91,6 +91,26 @@ describe('simulation behavior', () => {
 
     sim.step(10000);
     expect(flight.speed).toBe(targetSpeed);
+  });
+
+  it('rejects speed commands outside the min/max commandable range', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    expect(sim.handleCommand(`speed ${flight.callsign} 50`).ok).toBe(false);
+    expect(sim.handleCommand(`speed ${flight.callsign} 900`).ok).toBe(false);
+  });
+
+  it('crashes an airborne flight that stalls at zero airspeed outside of a controlled landing', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    flight.state = 'holding';
+    flight.speed = 0;
+
+    sim.step();
+
+    expect(flight.state).toBe('crashed');
+    expect(flight.statusMessage).toBe('Stalled - lost airspeed and crashed');
   });
 
   it('accepts a new heading and applies the turn rate to command duration', () => {

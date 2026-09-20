@@ -37,6 +37,9 @@
 - `abort-landing` cancels an active landing and starts a climb/acceleration operation back toward the flight's pre-landing altitude and speed.
 - If two airborne flights come within 1 grid unit of each other, both are marked crashed; a crashed flight stops moving and counts toward the end-of-game outcome.
 - An airborne flight that reaches the edge of the grid (coordinate 0 or 30 on either axis) is flagged as lost and automatically redirected toward the airport.
+- Aircraft movement distance per tick scales with current speed; a faster flight covers more grid distance than a slower one over the same elapsed time.
+- An airborne flight (outside a controlled landing) that reaches zero airspeed stalls and crashes.
+- Speed commands are limited to a range (120-600 kt); commands outside that range are rejected.
 - When the game ends, the controller receives a career outcome based on the crashed-flight ratio: no crashes is a promotion, some but under half is a reprimand, half or more is a suspension, and losing every flight is termination.
 - A landed flight assigned a gate enters `taxiing` for 10 seconds, then becomes `gated` and unloads passengers for 10 seconds before being removed from the simulation.
 - The game ends when all 3 starting flights are completed or crashed. A flight is completed only after it is removed from the board. New-flight generation is out of scope for now.

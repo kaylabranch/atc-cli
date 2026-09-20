@@ -103,6 +103,8 @@ Aircraft that come dangerously close together (within 3 grid units) are flagged 
 
 An airborne flight that strays to the edge of the grid (coordinate 0 or 30 on either axis) is considered lost, is flagged for attention, and is automatically redirected back toward the airport.
 
+Movement distance each tick scales directly with a flight's current speed, so a flight at 1000 kt covers ground faster than one at 200 kt. Speed commands are limited to 120-600 kt. An airborne flight that reaches zero airspeed outside of a controlled landing stalls and crashes.
+
 
 ## Project structure
 

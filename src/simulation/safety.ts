@@ -37,6 +37,26 @@ export function detectDanger(flights: Flight[]): Flight[] {
   return [...newlyCrashed];
 }
 
+const STALL_EXEMPT_STATES = new Set(['landing']);
+
+/** Airborne flights that lose all airspeed (outside a controlled landing) stall and crash; returns those newly crashed. */
+export function detectStalledFlights(flights: Flight[]): Flight[] {
+  const stalled: Flight[] = [];
+
+  for (const flight of flights) {
+    if (flight.state === 'crashed') continue;
+    if (!AIRBORNE_STATES.has(flight.state) || STALL_EXEMPT_STATES.has(flight.state)) continue;
+    if (flight.speed > 0) continue;
+
+    flight.state = 'crashed';
+    flight.danger = true;
+    flight.statusMessage = 'Stalled - lost airspeed and crashed';
+    stalled.push(flight);
+  }
+
+  return stalled;
+}
+
 export function isRunwayAvailable(flights: Flight[], commands: { action: string; callsign: string; target: string | number }[], runway: string, excludedCallsign: string): boolean {
   const assignedToOtherFlight = flights.some(
     (flight) => flight.callsign !== excludedCallsign
