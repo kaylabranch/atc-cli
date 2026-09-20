@@ -63,18 +63,33 @@ describe('simulation behavior', () => {
     expect(sim.getActiveCommands()).toHaveLength(0);
   });
 
-  it('uses elapsed time for a large speed change', () => {
+  it('uses elapsed time for a large speed increase, which completes slower than an equivalent decrease', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const targetSpeed = flight.speed + 100;
 
     sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
-    sim.step(1000);
+    sim.step(20000);
 
-    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(5);
+    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(50);
     expect(flight.speed).not.toBe(targetSpeed);
 
-    sim.step(19000);
+    sim.step(20000);
+    expect(flight.speed).toBe(targetSpeed);
+  });
+
+  it('completes a speed decrease faster than an equivalent increase', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    const targetSpeed = flight.speed - 100;
+
+    sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
+    sim.step(10000);
+
+    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(50);
+    expect(flight.speed).not.toBe(targetSpeed);
+
+    sim.step(10000);
     expect(flight.speed).toBe(targetSpeed);
   });
 
@@ -148,6 +163,37 @@ describe('simulation behavior', () => {
     expect(sim.handleCommand(`runway ${flight.callsign} 77L`).ok).toBe(true);
   });
 
+  it('explains exactly why a runway assignment was rejected', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    flight.x = 0;
+    flight.y = 0;
+    flight.heading = 225;
+    flight.speedTrend = 'steady';
+    flight.altitudeTrend = 'steady';
+
+    const rejection = sim.handleCommand(`runway ${flight.callsign} 77L`);
+
+    expect(rejection.ok).toBe(false);
+    expect(rejection.message).toContain('heading is');
+    expect(rejection.message).toContain('speed is');
+    expect(rejection.message).toContain('altitude is');
+  });
+
+  it('completes an altitude change at the faster 250 ft/s rate', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    const targetAltitude = flight.altitude - 2500;
+
+    sim.handleCommand(`altitude ${flight.callsign} ${targetAltitude}`);
+    sim.step(1000);
+
+    expect(sim.getActiveCommands()[0].progress).toBeCloseTo(10);
+
+    sim.step(9000);
+    expect(flight.altitude).toBe(targetAltitude);
+  });
+
   it('prevents runway conflicts and releases a runway when taxiing begins', () => {
     const sim = new Simulation();
     const [firstFlight, secondFlight] = sim.getFlights();
@@ -172,6 +218,8 @@ describe('simulation behavior', () => {
   it('moves airborne flights according to heading and speed as time passes', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
+    flight.x = 15;
+    flight.y = 15;
     const initialPosition = { x: flight.x, y: flight.y };
 
     flight.heading = 90;

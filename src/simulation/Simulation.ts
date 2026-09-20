@@ -1,13 +1,13 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
-import { GATE_COUNT, LANDING_DURATION_MS, RUNWAY_COUNT, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
+import { ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
 import { generateFlights } from './flightFactory.js';
 import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
-import { canBeAssignedRunway, detectDanger, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
+import { detectDanger, getRunwayAssignmentIssues, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -191,7 +191,8 @@ export class Simulation {
     if (Number.isNaN(speed)) return { ok: false, message: 'Speed must be a number.' };
 
     const delta = Math.abs(speed - flight.speed);
-    const durationMs = Math.max(1000, Math.ceil((delta / 5) * 1000));
+    const rate = speed < flight.speed ? SPEED_DECREASE_RATE_KT_PER_SEC : SPEED_INCREASE_RATE_KT_PER_SEC;
+    const durationMs = Math.max(1000, Math.ceil((delta / rate) * 1000));
     return this.queueCommand(flight, 'speed', speed, `Speed to ${speed} kt`, durationMs);
   }
 
@@ -219,9 +220,7 @@ export class Simulation {
     if (Number.isNaN(altitude)) return { ok: false, message: 'Altitude must be a number.' };
 
     const delta = Math.abs(altitude - flight.altitude);
-    if (delta > 1500) return { ok: false, message: 'Altitude changes are capped at 1500 ft/min.' };
-
-    const durationMs = Math.max(1000, Math.ceil((delta / 1500) * 60000));
+    const durationMs = Math.max(1000, Math.ceil((delta / ALTITUDE_RATE_FT_PER_SEC) * 1000));
     return this.queueCommand(flight, 'altitude', altitude, `Altitude to ${altitude} ft`, durationMs);
   }
 
@@ -244,8 +243,9 @@ export class Simulation {
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
     const normalizedRunway = runway.toUpperCase();
     if (!/^(77L|77R)$/.test(normalizedRunway)) return { ok: false, message: 'Runway must be 77L or 77R.' };
-    if (!canBeAssignedRunway(flight)) {
-      return { ok: false, message: `${flight.callsign} must be heading toward the airport while descending and decelerating.` };
+    const issues = getRunwayAssignmentIssues(flight);
+    if (issues.length) {
+      return { ok: false, message: `${flight.callsign} cannot be assigned a runway: ${issues.join('; ')}.` };
     }
     if (!isRunwayAvailable(this.flights, this.pendingCommands.all, normalizedRunway, flight.callsign)) {
       return { ok: false, message: `Runway ${normalizedRunway} is currently occupied.` };

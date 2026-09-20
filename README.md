@@ -89,7 +89,7 @@ Landing takes 15 seconds. During landing, altitude and speed decrease toward zer
 
 Assign a runway before clearing a flight to land. For example, use `UAL123 runway 77L`, wait for the assignment to complete, then use `UAL123 clear-to-land`.
 
-A flight must be pointed toward the airport and must have completed both a decreasing-speed command and a decreasing-altitude command before a runway assignment is accepted.
+A flight must be pointed toward the airport and must have completed both a decreasing-speed command and a decreasing-altitude command before a runway assignment is accepted. If a runway assignment is rejected, the response spells out exactly which condition(s) are unmet, including the flight's current heading, speed, and altitude.
 
 Only one flight may occupy a runway at a time. A runway is released when its flight begins taxiing to a gate and can then be assigned to another flight.
 
@@ -128,8 +128,8 @@ tests/
 
 ## Notes
 
-- Climb and descent rates are modeled around 1500 ft/min.
-- Speed commands complete at a rate of 5 knots per second.
+- Climb and descent rates are modeled at 250 ft/s.
+- Speed commands complete at a rate of 5 knots per second when decreasing and 2.5 knots per second when increasing.
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
 

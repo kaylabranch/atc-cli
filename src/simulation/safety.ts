@@ -71,9 +71,25 @@ export function isHeadingTowardAirport(flight: Flight): boolean {
 }
 
 export function canBeAssignedRunway(flight: Flight): boolean {
-  return isHeadingTowardAirport(flight)
-    && flight.speedTrend === 'decreasing'
-    && flight.altitudeTrend === 'decreasing';
+  return getRunwayAssignmentIssues(flight).length === 0;
+}
+
+/** Explains why a flight isn't eligible for runway assignment yet, for surfacing to the controller. */
+export function getRunwayAssignmentIssues(flight: Flight): string[] {
+  const issues: string[] = [];
+
+  if (!isHeadingTowardAirport(flight)) {
+    const targetHeading = Math.round(headingToAirport(flight));
+    issues.push(`heading is ${Math.round(flight.heading)}° but needs to be near ${targetHeading}° toward the airport`);
+  }
+  if (flight.speedTrend !== 'decreasing') {
+    issues.push(`speed is ${Math.round(flight.speed)} kt and ${flight.speedTrend}, not decreasing`);
+  }
+  if (flight.altitudeTrend !== 'decreasing') {
+    issues.push(`altitude is ${Math.round(flight.altitude)} ft and ${flight.altitudeTrend}, not decreasing`);
+  }
+
+  return issues;
 }
 
 /** Pulls airborne flights that strayed to the airspace boundary back toward the airport; returns flights that were redirected. */
