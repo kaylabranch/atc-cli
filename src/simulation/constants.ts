@@ -10,3 +10,5 @@ export const TICK_MS = 1000;
 export const AIRPORT_X = 16;
 export const AIRPORT_Y = 16;
 export const RUNWAY_HEADING_TOLERANCE_DEGREES = 20;
+export const DANGER_DISTANCE_UNITS = 3;
+export const COLLISION_DISTANCE_UNITS = 1;

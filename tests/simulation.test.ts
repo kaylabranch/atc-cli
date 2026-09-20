@@ -288,4 +288,60 @@ describe('simulation behavior', () => {
     expect(sim.renderStatusBoard()).toContain('GAME OVER');
   });
 
+  it('marks flights as crashed on mid-air collision and reports a fired outcome when all flights crash', () => {
+    const sim = new Simulation();
+    const [firstFlight, secondFlight, thirdFlight] = sim.getFlights();
+
+    firstFlight.x = 10;
+    firstFlight.y = 10;
+    firstFlight.speed = 0;
+    secondFlight.x = 10;
+    secondFlight.y = 10;
+    secondFlight.speed = 0;
+    thirdFlight.x = 10;
+    thirdFlight.y = 10;
+    thirdFlight.speed = 0;
+
+    sim.step();
+
+    expect(firstFlight.state).toBe('crashed');
+    expect(secondFlight.state).toBe('crashed');
+    expect(thirdFlight.state).toBe('crashed');
+    expect(sim.isGameOver()).toBe(true);
+    expect(sim.renderStatusBoard()).toContain('Crashed: 3');
+    expect(sim.renderStatusBoard()).toContain('TERMINATED');
+  });
+
+  it('reports a promotion outcome when every flight completes without a crash', () => {
+    const sim = new Simulation();
+    const flights = sim.getFlights();
+
+    prepareForRunway(flights[0]);
+    prepareForRunway(flights[1]);
+    sim.handleCommand(`runway ${flights[0].callsign} 77L`);
+    sim.handleCommand(`runway ${flights[1].callsign} 77R`);
+    sim.step(2000);
+    sim.handleCommand(`clear-to-land ${flights[0].callsign}`);
+    sim.handleCommand(`clear-to-land ${flights[1].callsign}`);
+
+    sim.step(15000);
+
+    sim.handleCommand(`gate ${flights[0].callsign} A1`);
+    sim.handleCommand(`gate ${flights[1].callsign} A2`);
+    sim.step(2000);
+    prepareForRunway(flights[2]);
+    sim.handleCommand(`runway ${flights[2].callsign} 77L`);
+    sim.step(2000);
+    sim.handleCommand(`clear-to-land ${flights[2].callsign}`);
+    sim.step(15000);
+    sim.handleCommand(`gate ${flights[2].callsign} A3`);
+    sim.step(2000);
+    sim.step(10000);
+    sim.step(10000);
+
+    expect(sim.isGameOver()).toBe(true);
+    expect(sim.renderStatusBoard()).toContain('Crashed: 0');
+    expect(sim.renderStatusBoard()).toContain('PROMOTED');
+  });
+
 });

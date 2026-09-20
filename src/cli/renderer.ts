@@ -98,10 +98,10 @@ export function renderSideBySide(left: string, right: string, gap = 4): string {
   return lines.join('\n');
 }
 
-export function renderStatusBoard(flights: Flight[], activeFlights: number, dangerFlights: number, completedFlights: number): string {
+export function renderStatusBoard(flights: Flight[], activeFlights: number, dangerFlights: number, completedFlights: number, crashedFlights = 0): string {
   const lines = [
     `${bold('ATC STATUS')}`,
-    `${info(`Active flights: ${activeFlights}`)} | ${danger(`Needs attention: ${dangerFlights}`)} | ${success(`Completed: ${completedFlights}`)}`,
+    `${info(`Active flights: ${activeFlights}`)} | ${danger(`Needs attention: ${dangerFlights}`)} | ${success(`Completed: ${completedFlights}`)} | ${danger(`Crashed: ${crashedFlights}`)}`,
     '',
     `${'(ALIAS) CALLSIGN'.padEnd(18)} ${'STATE'.padEnd(12)} ${'ALT'.padStart(6)} ${'SPD'.padStart(6)} ${'HDG'.padStart(6)} ${'RWY'.padStart(6)} ${'GATE'.padStart(6)}`,
     '-------------------------------------------------------------',
@@ -157,5 +157,35 @@ export function renderFlightDetail(flight: Flight): string {
     `Gate: ${flight.gate ?? 'none'}`,
     `Runway: ${flight.runway ?? 'none'}`,
     `Status: ${flight.statusMessage}`,
+  ].join('\n');
+}
+
+export function renderGameOverSummary(crashedFlights: number, totalFlights: number): string {
+  const outcome = crashedFlights === 0
+    ? {
+      label: 'COMMENDATION - PROMOTED',
+      message: 'Perfect safety record. Every flight landed safely - you have been promoted to Senior Controller.',
+    }
+    : crashedFlights === totalFlights
+      ? {
+        label: 'TERMINATED',
+        message: `Every aircraft under your watch was lost (${crashedFlights}/${totalFlights}). You are fired, effective immediately.`,
+      }
+      : crashedFlights / totalFlights >= 0.5
+        ? {
+          label: 'SUSPENDED',
+          message: `Multiple aircraft lost (${crashedFlights}/${totalFlights}). You have been placed on unpaid administrative leave pending review.`,
+        }
+        : {
+          label: 'REPRIMANDED',
+          message: `An aircraft was lost on your watch (${crashedFlights}/${totalFlights}). You have received a formal written reprimand and mandatory retraining.`,
+        };
+
+  const labelText = crashedFlights === 0 ? success(bold(outcome.label)) : danger(bold(outcome.label));
+
+  return [
+    bold('GAME OVER'),
+    labelText,
+    outcome.message,
   ].join('\n');
 }

@@ -1,5 +1,5 @@
 import { parseCommand } from '../cli/commandParser.js';
-import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
+import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
 import { GATE_COUNT, LANDING_DURATION_MS, RUNWAY_COUNT, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
 import { generateFlights } from './flightFactory.js';
@@ -17,6 +17,7 @@ export class Simulation {
   private readonly gates: number;
   private readonly finishedFlights = new Set<string>();
   private completedFlights = 0;
+  private crashedFlights = 0;
   private gameOver = false;
   private readonly pendingCommands = new PendingCommands();
 
@@ -88,7 +89,11 @@ export class Simulation {
     }
 
     advanceFlightMovement(this.flights, elapsedMilliseconds);
-    detectDanger(this.flights);
+    const crashedThisTick = detectDanger(this.flights);
+    for (const flight of crashedThisTick) {
+      this.crashedFlights += 1;
+      this.finishedFlights.add(flight.callsign);
+    }
     this.checkGameOver();
   }
 
@@ -133,8 +138,11 @@ export class Simulation {
   renderStatusBoard(): string {
     const activeFlights = this.flights.length;
     const dangerFlights = this.flights.filter((flight) => flight.danger).length;
-    const board = renderStatusBoard(this.flights, activeFlights, dangerFlights, this.completedFlights);
-    return this.gameOver ? `${board}\n\nGAME OVER - All starting flights are landed or crashed.` : board;
+    const board = renderStatusBoard(this.flights, activeFlights, dangerFlights, this.completedFlights, this.crashedFlights);
+    if (!this.gameOver) return board;
+
+    const summary = renderGameOverSummary(this.crashedFlights, STARTING_FLIGHT_COUNT);
+    return `${board}\n\n${summary}`;
   }
 
   renderAirportLayout(): string {

@@ -1,7 +1,7 @@
 import type { Flight } from '../types.js';
 
 const MILLISECONDS_PER_HOUR = 3_600_000;
-const AIRBORNE_STATES = new Set(['approach', 'holding', 'climbing', 'descending', 'landing', 'final']);
+export const AIRBORNE_STATES = new Set(['approach', 'holding', 'climbing', 'descending', 'landing', 'final']);
 
 export function advanceFlightMovement(flights: Flight[], elapsedMilliseconds: number): void {
   const elapsedHours = elapsedMilliseconds / MILLISECONDS_PER_HOUR;

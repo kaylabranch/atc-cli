@@ -99,6 +99,8 @@ When running in an interactive terminal, the dashboard refreshes in place and ke
 
 The game ends when all three starting flights are completed or crashed. A flight counts as completed only after it has been removed from the board. New-flight generation is not enabled yet.
 
+Aircraft that come dangerously close together (within 3 grid units) are flagged as a conflict alert. If two flights collide (within 1 grid unit) while airborne, both are marked as crashed and are counted toward the end-of-game outcome. When the game ends, the dashboard shows a career outcome based on how many aircraft were lost: a perfect run earns a promotion, one loss earns a reprimand, losing half or more of the flights results in suspension, and losing every flight gets the controller fired.
+
 
 ## Project structure
 
