@@ -48,13 +48,13 @@
    ```text
    help
    status all
-   speed UAL123 240
-   heading UAL123 180
-   altitude UAL123 12000
-   gate UAL123 A1
-   runway UAL123 77L
-   clear-to-land UAL123
-   hold UAL123 left
+   UAL123 speed 240
+   UAL123 heading 180
+   UAL123 altitude 12000
+   UAL123 gate A1
+   UAL123 runway 77L
+   UAL123 clear-to-land
+   UAL123 hold left
    pause
    resume
    exit
@@ -68,7 +68,7 @@
    - **Tips** - how to read the `IN PROGRESS` list, what a red-highlighted flight means, and the `Tab` autocomplete shortcut.
    - **Examples** - ready-to-run sample commands.
 
-   Both command orderings are accepted everywhere: `speed UAL123 240` and `UAL123 speed 240` behave identically. Run `close-help` to dismiss the help text once you're done reading it.
+   Flight commands always use callsign-first order, just like real ATC phraseology: `<callsign> <command> <value>` (for example, `UAL123 speed 240`). Run `close-help` to dismiss the help text once you're done reading it.
 
 ### Interactive command entry
 

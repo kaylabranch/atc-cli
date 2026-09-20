@@ -11,8 +11,8 @@ function prepareForRunway(flight: ReturnType<Simulation['getFlights']>[number]):
 }
 
 describe('command parsing', () => {
-  it('parses a user command into action and arguments', () => {
-    const result = parseCommand('speed UAL123 240');
+  it('parses a callsign-first command into action and arguments', () => {
+    const result = parseCommand('UAL123 speed 240');
 
     expect(result.action).toBe('speed');
     expect(result.args).toEqual(['UAL123', '240']);
@@ -33,6 +33,13 @@ describe('command parsing', () => {
     });
   });
 
+  it('rejects the old command-first order in favor of callsign-first phraseology', () => {
+    expect(parseCommand('speed UAL123 240')).toMatchObject({
+      action: 'legacy-order',
+      args: ['speed'],
+    });
+  });
+
   it('completes callsigns only before the first space', () => {
     expect(completeCallsign('NKS', ['NKS580', 'UAL613'])[0]).toEqual(['NKS580']);
     expect(completeCallsign('NKS580 ', ['NKS580'])[0]).toEqual([]);
@@ -47,7 +54,7 @@ describe('simulation behavior', () => {
     const initialSpeed = flight.speed;
     const targetSpeed = initialSpeed + 10;
 
-    const outcome = sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
+    const outcome = sim.handleCommand(`${flight.callsign} speed ${targetSpeed}`);
     expect(outcome.ok).toBe(true);
     expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
     expect(sim.getActiveCommands()).toHaveLength(1);
@@ -67,7 +74,7 @@ describe('simulation behavior', () => {
     const flight = sim.getFlights()[0];
     const targetSpeed = flight.speed + 100;
 
-    sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
+    sim.handleCommand(`${flight.callsign} speed ${targetSpeed}`);
     sim.step(20000);
 
     expect(sim.getActiveCommands()[0].progress).toBeCloseTo(50);
@@ -83,7 +90,7 @@ describe('simulation behavior', () => {
     flight.speed = 300;
     const targetSpeed = flight.speed - 100;
 
-    sim.handleCommand(`speed ${flight.callsign} ${targetSpeed}`);
+    sim.handleCommand(`${flight.callsign} speed ${targetSpeed}`);
     sim.step(10000);
 
     expect(sim.getActiveCommands()[0].progress).toBeCloseTo(50);
@@ -97,8 +104,8 @@ describe('simulation behavior', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
-    expect(sim.handleCommand(`speed ${flight.callsign} 50`).ok).toBe(false);
-    expect(sim.handleCommand(`speed ${flight.callsign} 900`).ok).toBe(false);
+    expect(sim.handleCommand(`${flight.callsign} speed 50`).ok).toBe(false);
+    expect(sim.handleCommand(`${flight.callsign} speed 900`).ok).toBe(false);
   });
 
   it('crashes an airborne flight that stalls at zero airspeed outside of a controlled landing', () => {
@@ -118,7 +125,7 @@ describe('simulation behavior', () => {
     const flight = sim.getFlights()[0];
     const targetHeading = (flight.heading + 90) % 360;
 
-    const outcome = sim.handleCommand(`heading ${flight.callsign} ${targetHeading}`);
+    const outcome = sim.handleCommand(`${flight.callsign} heading ${targetHeading}`);
 
     expect(outcome.ok).toBe(true);
     expect(flight.heading).not.toBe(targetHeading);
@@ -165,11 +172,22 @@ describe('simulation behavior', () => {
     const help = sim.handleCommand('help');
 
     expect(help.ok).toBe(true);
-    expect(help.message).toContain('speed <callsign> <knots>');
+    expect(help.message).toContain('<callsign> speed <knots>');
     expect(help.message).toContain('120-600 kt');
-    expect(help.message).toContain('runway <callsign> <77L|77R>');
+    expect(help.message).toContain('<callsign> runway <77L|77R>');
     expect(help.message).toContain('Workflow');
     expect(help.message).toContain('Examples');
+  });
+
+  it('rejects flight commands issued in the old command-first order with guidance', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    const result = sim.handleCommand(`speed ${flight.callsign} 240`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('callsign-first order');
+    expect(result.message).toContain('speed');
   });
 
   it('closes the help text with close-help', () => {
@@ -186,7 +204,7 @@ describe('simulation behavior', () => {
     const flight = sim.getFlights()[0];
 
     prepareForRunway(flight);
-    sim.handleCommand(`runway ${flight.callsign} 77L`);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
     sim.step();
 
     expect(sim.renderActiveCommands()).toContain('IN PROGRESS');
@@ -197,11 +215,11 @@ describe('simulation behavior', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
-    expect(sim.handleCommand(`runway ${flight.callsign} 77L`).ok).toBe(false);
+    expect(sim.handleCommand(`${flight.callsign} runway 77L`).ok).toBe(false);
 
     prepareForRunway(flight);
 
-    expect(sim.handleCommand(`runway ${flight.callsign} 77L`).ok).toBe(true);
+    expect(sim.handleCommand(`${flight.callsign} runway 77L`).ok).toBe(true);
   });
 
   it('explains exactly why a runway assignment was rejected', () => {
@@ -213,7 +231,7 @@ describe('simulation behavior', () => {
     flight.speedTrend = 'steady';
     flight.altitudeTrend = 'steady';
 
-    const rejection = sim.handleCommand(`runway ${flight.callsign} 77L`);
+    const rejection = sim.handleCommand(`${flight.callsign} runway 77L`);
 
     expect(rejection.ok).toBe(false);
     expect(rejection.message).toContain('heading is');
@@ -226,7 +244,7 @@ describe('simulation behavior', () => {
     const flight = sim.getFlights()[0];
     const targetAltitude = flight.altitude - 2500;
 
-    sim.handleCommand(`altitude ${flight.callsign} ${targetAltitude}`);
+    sim.handleCommand(`${flight.callsign} altitude ${targetAltitude}`);
     sim.step(1000);
 
     expect(sim.getActiveCommands()[0].progress).toBeCloseTo(10);
@@ -241,19 +259,19 @@ describe('simulation behavior', () => {
 
     prepareForRunway(firstFlight);
     prepareForRunway(secondFlight);
-    expect(sim.handleCommand(`runway ${firstFlight.callsign} 77L`).ok).toBe(true);
+    expect(sim.handleCommand(`${firstFlight.callsign} runway 77L`).ok).toBe(true);
     sim.step(2000);
-    expect(sim.handleCommand(`runway ${secondFlight.callsign} 77L`).ok).toBe(false);
+    expect(sim.handleCommand(`${secondFlight.callsign} runway 77L`).ok).toBe(false);
 
-    expect(sim.handleCommand(`clear-to-land ${firstFlight.callsign}`).ok).toBe(true);
+    expect(sim.handleCommand(`${firstFlight.callsign} clear-to-land`).ok).toBe(true);
     sim.step(15000);
-    expect(sim.handleCommand(`gate ${firstFlight.callsign} A1`).ok).toBe(true);
+    expect(sim.handleCommand(`${firstFlight.callsign} gate A1`).ok).toBe(true);
     sim.step(2000);
 
     expect(firstFlight.state).toBe('taxiing');
     expect(firstFlight.runway).toBeUndefined();
     prepareForRunway(secondFlight);
-    expect(sim.handleCommand(`runway ${secondFlight.callsign} 77L`).ok).toBe(true);
+    expect(sim.handleCommand(`${secondFlight.callsign} runway 77L`).ok).toBe(true);
   });
 
   it('moves airborne flights according to heading and speed as time passes', () => {
@@ -288,11 +306,11 @@ describe('simulation behavior', () => {
     const initialAltitude = flight.altitude;
     const initialSpeed = flight.speed;
 
-    expect(sim.handleCommand(`clear-to-land ${flight.callsign}`).ok).toBe(false);
+    expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(false);
     prepareForRunway(flight);
-    sim.handleCommand(`runway ${flight.callsign} 77L`);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
     sim.step(2000);
-    sim.handleCommand(`clear-to-land ${flight.callsign}`);
+    sim.handleCommand(`${flight.callsign} clear-to-land`);
     expect(flight.state).toBe('landing');
     expect(flight.statusMessage).toBe('Landing in progress');
 
@@ -302,7 +320,7 @@ describe('simulation behavior', () => {
     expect(flight.speed).toBeGreaterThan(0);
     expect(flight.speed).toBeLessThan(initialSpeed);
 
-    const abortResult = sim.handleCommand(`abort-landing ${flight.callsign}`);
+    const abortResult = sim.handleCommand(`${flight.callsign} abort-landing`);
     expect(abortResult.ok).toBe(true);
     expect(flight.state).toBe('climbing');
 
@@ -320,14 +338,14 @@ describe('simulation behavior', () => {
     const flight = sim.getFlights()[0];
 
     prepareForRunway(flight);
-    sim.handleCommand(`runway ${flight.callsign} 77L`);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
     sim.step(2000);
-    expect(sim.handleCommand(`clear-to-land ${flight.callsign}`).ok).toBe(true);
+    expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(true);
     sim.step(15000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('landed');
     expect(sim.renderStatusBoard()).toContain('Completed: 0');
 
-    expect(sim.handleCommand(`gate ${flight.callsign} A1`).ok).toBe(true);
+    expect(sim.handleCommand(`${flight.callsign} gate A1`).ok).toBe(true);
     sim.step(2000);
     expect(sim.getFlight(flight.callsign)?.state).toBe('taxiing');
     expect(sim.getFlight(flight.callsign)?.gate).toBe('A1');
@@ -351,23 +369,23 @@ describe('simulation behavior', () => {
     expect(flights).toHaveLength(3);
     prepareForRunway(flights[0]);
     prepareForRunway(flights[1]);
-    sim.handleCommand(`runway ${flights[0].callsign} 77L`);
-    sim.handleCommand(`runway ${flights[1].callsign} 77R`);
+    sim.handleCommand(`${flights[0].callsign} runway 77L`);
+    sim.handleCommand(`${flights[1].callsign} runway 77R`);
     sim.step(2000);
-    sim.handleCommand(`clear-to-land ${flights[0].callsign}`);
-    sim.handleCommand(`clear-to-land ${flights[1].callsign}`);
+    sim.handleCommand(`${flights[0].callsign} clear-to-land`);
+    sim.handleCommand(`${flights[1].callsign} clear-to-land`);
 
     sim.step(15000);
 
-    sim.handleCommand(`gate ${flights[0].callsign} A1`);
-    sim.handleCommand(`gate ${flights[1].callsign} A2`);
+    sim.handleCommand(`${flights[0].callsign} gate A1`);
+    sim.handleCommand(`${flights[1].callsign} gate A2`);
     sim.step(2000);
     prepareForRunway(flights[2]);
-    expect(sim.handleCommand(`runway ${flights[2].callsign} 77L`).ok).toBe(true);
+    expect(sim.handleCommand(`${flights[2].callsign} runway 77L`).ok).toBe(true);
     sim.step(2000);
-    sim.handleCommand(`clear-to-land ${flights[2].callsign}`);
+    sim.handleCommand(`${flights[2].callsign} clear-to-land`);
     sim.step(15000);
-    sim.handleCommand(`gate ${flights[2].callsign} A3`);
+    sim.handleCommand(`${flights[2].callsign} gate A3`);
     sim.step(2000);
     sim.step(10000);
     sim.step(10000);
@@ -407,23 +425,23 @@ describe('simulation behavior', () => {
 
     prepareForRunway(flights[0]);
     prepareForRunway(flights[1]);
-    sim.handleCommand(`runway ${flights[0].callsign} 77L`);
-    sim.handleCommand(`runway ${flights[1].callsign} 77R`);
+    sim.handleCommand(`${flights[0].callsign} runway 77L`);
+    sim.handleCommand(`${flights[1].callsign} runway 77R`);
     sim.step(2000);
-    sim.handleCommand(`clear-to-land ${flights[0].callsign}`);
-    sim.handleCommand(`clear-to-land ${flights[1].callsign}`);
+    sim.handleCommand(`${flights[0].callsign} clear-to-land`);
+    sim.handleCommand(`${flights[1].callsign} clear-to-land`);
 
     sim.step(15000);
 
-    sim.handleCommand(`gate ${flights[0].callsign} A1`);
-    sim.handleCommand(`gate ${flights[1].callsign} A2`);
+    sim.handleCommand(`${flights[0].callsign} gate A1`);
+    sim.handleCommand(`${flights[1].callsign} gate A2`);
     sim.step(2000);
     prepareForRunway(flights[2]);
-    sim.handleCommand(`runway ${flights[2].callsign} 77L`);
+    sim.handleCommand(`${flights[2].callsign} runway 77L`);
     sim.step(2000);
-    sim.handleCommand(`clear-to-land ${flights[2].callsign}`);
+    sim.handleCommand(`${flights[2].callsign} clear-to-land`);
     sim.step(15000);
-    sim.handleCommand(`gate ${flights[2].callsign} A3`);
+    sim.handleCommand(`${flights[2].callsign} gate A3`);
     sim.step(2000);
     sim.step(10000);
     sim.step(10000);

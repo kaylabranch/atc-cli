@@ -29,6 +29,7 @@
 - Users can pause and resume the simulation at any time.
 - Users can exit the simulation at any time, and the simulation should handle this gracefully, ensuring that all resources are cleaned up properly.
 - Phraseology of commands should be realistic and follow standard ATC communication protocols.
+- Flight commands must use callsign-first order (`<callsign> <command> <value>`), matching real-world ATC phraseology; commands issued in the old command-first order are rejected with guidance to use the correct order.
 - Commands should be case-insensitive, and the simulation should handle invalid commands gracefully, providing appropriate feedback to the user.
 - There should be an indicator of the number of active flights in the simulation at any given time, and any flights needing attention or that have crashed should be clearly indicated to the user, as well as the number of flights completed.
 - `clear-to-land` starts a 15-second landing operation. The flight enters `landing` immediately, and altitude and speed decrease toward zero during the operation before it becomes `landed`.

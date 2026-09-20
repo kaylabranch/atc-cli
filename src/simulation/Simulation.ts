@@ -111,6 +111,10 @@ export class Simulation {
         return { ok: true, message: renderHelp() };
       case 'close-help':
         return { ok: true, message: '' };
+      case 'legacy-order': {
+        const [attemptedCommand] = args;
+        return { ok: false, message: `Flight commands use callsign-first order: <callsign> ${attemptedCommand} <value>.` };
+      }
       case 'status':
         return this.handleStatus(args);
       case 'speed':
@@ -189,7 +193,7 @@ export class Simulation {
   }
 
   private handleSpeed(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: speed <callsign> <knots>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> speed <knots>' };
     const [callsign, rawSpeed] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
@@ -207,7 +211,7 @@ export class Simulation {
   }
 
   private handleHeading(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: heading <callsign> <degrees>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> heading <degrees>' };
     const [callsign, rawHeading] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
@@ -221,7 +225,7 @@ export class Simulation {
   }
 
   private handleAltitude(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: altitude <callsign> <feet>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> altitude <feet>' };
     const [callsign, rawAltitude] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
@@ -235,7 +239,7 @@ export class Simulation {
   }
 
   private handleGate(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: gate <callsign> <gate>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> gate <gate>' };
     const [callsign, gate] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
@@ -247,7 +251,7 @@ export class Simulation {
   }
 
   private handleRunway(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: runway <callsign> <runway>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> runway <runway>' };
     const [callsign, runway] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
@@ -265,7 +269,7 @@ export class Simulation {
   }
 
   private handleClearToLand(args: string[]): CommandResult {
-    if (!args.length) return { ok: false, message: 'Usage: clear-to-land <callsign>' };
+    if (!args.length) return { ok: false, message: 'Usage: <callsign> clear-to-land' };
 
     const flight = this.getFlight(args[0]);
     if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
@@ -291,7 +295,7 @@ export class Simulation {
   }
 
   private handleAbortLanding(args: string[]): CommandResult {
-    if (!args.length) return { ok: false, message: 'Usage: abort-landing <callsign>' };
+    if (!args.length) return { ok: false, message: 'Usage: <callsign> abort-landing' };
 
     const flight = this.getFlight(args[0]);
     if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
@@ -321,7 +325,7 @@ export class Simulation {
   }
 
   private handleHold(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: hold <callsign> <left|right>' };
+    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> hold <left|right>' };
     const [callsign, side] = args;
     const flight = this.getFlight(callsign);
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };

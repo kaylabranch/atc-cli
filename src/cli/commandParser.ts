@@ -8,6 +8,7 @@ export interface ParsedCommand {
   raw: string;
 }
 
+/** Flight commands must use real-world ATC phrasing: callsign, then command, then value. */
 export function parseCommand(input: string): ParsedCommand {
   const trimmed = input.trim();
   if (!trimmed) {
@@ -18,23 +19,19 @@ export function parseCommand(input: string): ParsedCommand {
 
   if (parts.length >= 2) {
     const command = parts[1].startsWith('/') ? parts[1].slice(1).toLowerCase() : parts[1].toLowerCase();
-    if (!FLIGHT_COMMANDS.has(command)) {
-      const action = parts[0].toLowerCase();
+    if (FLIGHT_COMMANDS.has(command)) {
       return {
-        action,
-        args: parts.slice(1),
+        action: command,
+        args: [parts[0], ...parts.slice(2)],
         raw: trimmed,
       };
     }
-
-    return {
-      action: command,
-      args: [parts[0], ...parts.slice(2)],
-      raw: trimmed,
-    };
   }
 
   const action = parts[0].toLowerCase();
+  if (FLIGHT_COMMANDS.has(action)) {
+    return { action: 'legacy-order', args: [action], raw: trimmed };
+  }
 
   return {
     action,
