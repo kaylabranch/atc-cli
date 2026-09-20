@@ -7,7 +7,7 @@ import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
-import { canBeAssignedRunway, detectDanger, isRunwayAvailable } from './safety.js';
+import { canBeAssignedRunway, detectDanger, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -89,6 +89,7 @@ export class Simulation {
     }
 
     advanceFlightMovement(this.flights, elapsedMilliseconds);
+    redirectFlightsAtBoundary(this.flights);
     const crashedThisTick = detectDanger(this.flights);
     for (const flight of crashedThisTick) {
       this.crashedFlights += 1;

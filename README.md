@@ -101,6 +101,8 @@ The game ends when all three starting flights are completed or crashed. A flight
 
 Aircraft that come dangerously close together (within 3 grid units) are flagged as a conflict alert. If two flights collide (within 1 grid unit) while airborne, both are marked as crashed and are counted toward the end-of-game outcome. When the game ends, the dashboard shows a career outcome based on how many aircraft were lost: a perfect run earns a promotion, one loss earns a reprimand, losing half or more of the flights results in suspension, and losing every flight gets the controller fired.
 
+An airborne flight that strays to the edge of the grid (coordinate 0 or 30 on either axis) is considered lost, is flagged for attention, and is automatically redirected back toward the airport.
+
 
 ## Project structure
 

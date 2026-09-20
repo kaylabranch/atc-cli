@@ -344,4 +344,20 @@ describe('simulation behavior', () => {
     expect(sim.renderStatusBoard()).toContain('PROMOTED');
   });
 
+  it('redirects an airborne flight back toward the airport when it strays to the airspace boundary', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    flight.x = 0;
+    flight.y = 15;
+    flight.heading = 270;
+
+    sim.step();
+
+    expect(flight.x).toBe(0);
+    expect(flight.danger).toBe(true);
+    expect(flight.statusMessage).toBe('Lost near airspace boundary - redirected to airport');
+    expect(flight.heading).not.toBe(270);
+  });
+
 });
