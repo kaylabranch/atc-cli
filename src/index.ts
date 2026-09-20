@@ -13,10 +13,15 @@ if (args.includes('--help') || args.includes('-h')) {
   console.log([
     'ATC CLI Simulation',
     '',
+    'Usage:',
+    '  npm run clock-in         Start the simulation',
+    '  npm run dev -- --help    Show this help',
+    '',
     'Options:',
-    '  --help                            Show this help',
+    '  --help, -h                        Show this help',
     '',
     'Airport: runways 77L/77R, gates A1/A2/A3, 3 starting flights',
+    'Once running, type "help" at the ATC> prompt for the full command list.',
   ].join('\n'));
   process.exit(0);
 }

@@ -11,10 +11,9 @@
 - Conflict alerts for flights that stray too close together, and mid-air collisions for flights that get even closer
 - Boundary redirection for flights that stray to the edge of the simulation grid
 - Stall detection for airborne flights that lose all airspeed outside of a controlled landing
-- A career outcome (promotion, reprimand, suspension, or termination) once the game ends, based on how many flights crashed
+- A career outcome (promotion, reprimand, suspension, or termination) once the game ends, based on flight outcome
 - Status board, airport layout, grid position map, and altitude cross-section, all refreshed in place
 
-The altitude chart's horizontal axis uses simulation grid units, not miles. Distance is the straight-line distance from the airport reference point.
 ## Tech stack
 
 - TypeScript
@@ -61,6 +60,16 @@ The altitude chart's horizontal axis uses simulation grid units, not miles. Dist
    exit
    ```
 
+4. Run `help` at any time to see the full in-app command reference. It's organized into:
+
+   - **General** - `help`, `close-help`, `status`, `pause`, `resume`, `exit`.
+   - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, `gate`, and `hold`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and decreases at 5 kt/s but only increases at 2.5 kt/s).
+   - **Workflow** - the required order of operations for landing a flight: `runway` -> `clear-to-land` -> wait for `landed` -> `gate`.
+   - **Tips** - how to read the `IN PROGRESS` list, what a red-highlighted flight means, and the `Tab` autocomplete shortcut.
+   - **Examples** - ready-to-run sample commands.
+
+   Both command orderings are accepted everywhere: `speed UAL123 240` and `UAL123 speed 240` behave identically. Run `close-help` to dismiss the help text once you're done reading it.
+
 ### Interactive command entry
 
 An empty prompt shows a dim italic `callsign command value` placeholder; it is visual guidance only and disappears when you type.
@@ -82,13 +91,7 @@ Flight instructions use callsign-first commands:
 
 To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Type a command prefix to filter it, such as `UAL123 h` for `heading` and `hold`, or `UAL123 hea` for `heading`. Press `Enter` or `Tab` to accept the highlighted match; the command is inserted into the prompt with a trailing space, ready for its value.
 
-## Configuration
-
-Run `npm run dev -- --help` to see all startup options. The simulation uses one standard speed model for all sessions:
-
-```bash
-npm run clock-in
-```
+## Details
 
 The airport always uses 2 runways (`77L`, `77R`) and 3 gates (`A1`, `A2`, `A3`). The simulation starts with 3 flights and uses a fixed 1000 ms display update interval. The status table includes runway and gate assignments. Airborne flights move continuously as time passes using their current speed and heading; headings use aviation convention (`0°` north, `90°` east). Landed, taxiing, and gated flights remain stationary.
 

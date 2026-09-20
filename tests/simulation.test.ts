@@ -160,6 +160,27 @@ describe('simulation behavior', () => {
     expect(progressBar(12.6)).toContain('13%');
   });
 
+  it('shows a detailed help menu with usage and constraints for every command', () => {
+    const sim = new Simulation();
+    const help = sim.handleCommand('help');
+
+    expect(help.ok).toBe(true);
+    expect(help.message).toContain('speed <callsign> <knots>');
+    expect(help.message).toContain('120-600 kt');
+    expect(help.message).toContain('runway <callsign> <77L|77R>');
+    expect(help.message).toContain('Workflow');
+    expect(help.message).toContain('Examples');
+  });
+
+  it('closes the help text with close-help', () => {
+    const sim = new Simulation();
+
+    const closeResult = sim.handleCommand('close-help');
+
+    expect(closeResult.ok).toBe(true);
+    expect(closeResult.message).toBe('');
+  });
+
   it('renders progress beside pending commands', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];

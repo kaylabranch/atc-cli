@@ -13,6 +13,47 @@ const ALTITUDE_CHART_HEIGHT = 9;
 const ALTITUDE_CHART_MAX = 18000;
 const DISTANCE_CHART_MAX = 25;
 
+export function renderHelp(): string {
+  const command = (text: string) => accent(text.padEnd(30));
+
+  return [
+    bold('ATC CLI HELP'),
+    '',
+    bold('General'),
+    `  ${command('help')}Show this help`,
+    `  ${command('close-help')}Dismiss this help text`,
+    `  ${command('status [all|callsign]')}Show every flight, or details for one flight`,
+    `  ${command('pause')}Pause the simulation clock`,
+    `  ${command('resume')}Resume the simulation clock`,
+    `  ${command('exit')}End the simulation`,
+    '',
+    bold('Flight commands'),
+    'Both orderings work: "<callsign> <command> <args>" or "<command> <callsign> <args>".',
+    `  ${command('speed <callsign> <knots>')}Set target speed (120-600 kt); decreases at 5 kt/s, increases at 2.5 kt/s`,
+    `  ${command('heading <callsign> <degrees>')}Set target heading (0-359°, 0=N); turns at 3°/s`,
+    `  ${command('altitude <callsign> <feet>')}Set target altitude; climbs/descends at 250 ft/s`,
+    `  ${command('runway <callsign> <77L|77R>')}Assign a runway; requires heading at the airport with decreasing speed and altitude`,
+    `  ${command('clear-to-land <callsign>')}Begin a 15s landing; requires a completed runway assignment`,
+    `  ${command('abort-landing <callsign>')}Cancel an active landing and climb back to altitude and speed`,
+    `  ${command('gate <callsign> <A1|A2|A3>')}Assign a gate once landed; taxis 10s, then unloads 10s`,
+    `  ${command('hold <callsign> <left|right>')}Enter a holding pattern`,
+    '',
+    bold('Workflow'),
+    `  ${warning('runway')} -> ${warning('clear-to-land')} -> wait for "landed" -> ${warning('gate')}`,
+    '',
+    bold('Tips'),
+    '  - Commands complete over time; watch the IN PROGRESS list for their progress.',
+    '  - Flights highlighted in red need attention (conflict, stall, or collision risk).',
+    '  - Type a callsign and press Tab or Enter to autocomplete it.',
+    '',
+    bold('Examples'),
+    '  speed UAL123 240',
+    '  UAL123 runway 77L',
+    '  clear-to-land DLH202',
+    '  status all',
+  ].join('\n');
+}
+
 export function renderAirportLayout(runways: number, gates: number): string {
   const runwayNames = ['77L', '77R'];
   const gateNames = ['A1', 'A2', 'A3'];

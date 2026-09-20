@@ -1,5 +1,5 @@
 import { parseCommand } from '../cli/commandParser.js';
-import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
+import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderHelp, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
 import { ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS, MAX_SPEED_KTS, MIN_SPEED_KTS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
 import { generateFlights } from './flightFactory.js';
@@ -108,7 +108,9 @@ export class Simulation {
 
     switch (action) {
       case 'help':
-        return { ok: true, message: this.helpText() };
+        return { ok: true, message: renderHelp() };
+      case 'close-help':
+        return { ok: true, message: '' };
       case 'status':
         return this.handleStatus(args);
       case 'speed':
@@ -345,38 +347,5 @@ export class Simulation {
     this.gameOver = true;
     this.running = false;
     this.paused = true;
-  }
-
-  private helpText(): string {
-    return [
-      'Available commands:',
-      '  help',
-      '  status [all|callsign]',
-      '',
-      'Flight command registry:',
-      '  <callsign> speed <knots>',
-      '  <callsign> heading <degrees>',
-      '  <callsign> altitude <feet>',
-      '  <callsign> gate <A1|A2|A3>',
-      '  <callsign> runway <77L|77R>',
-      '  <callsign> clear-to-land',
-      '  <callsign> abort-landing',
-      '  <callsign> hold <left|right>',
-      '  speed <callsign> <knots>',
-      '  heading <callsign> <degrees>',
-      '  altitude <callsign> <feet>',
-      '  gate <callsign> <gate>',
-      '  runway <callsign> <runway>',
-      '  clear-to-land <callsign>',
-      '  hold <callsign> <left|right>',
-      '  pause',
-      '  resume',
-      '  exit',
-      '',
-      'Examples:',
-      '  speed UAL123 240',
-      '  clear-to-land DLH202',
-      '  status all',
-    ].join('\n');
   }
 }
