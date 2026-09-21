@@ -1,7 +1,7 @@
 import { colorLabels, progressBar } from './color.js';
 import type { ActiveCommand, Flight } from '../types.js';
 
-const { danger, warning, success, info, accent, bold } = colorLabels();
+const { danger, warning, success, info, accent, bold, muted } = colorLabels();
 const GRID_WIDTH = 31;
 const GRID_HEIGHT = 16;
 const GRID_MAX_COORDINATE = 30;
@@ -28,7 +28,7 @@ export function renderHelp(): string {
     `  ${command('exit')}End the simulation`,
     '',
     bold('Flight commands'),
-    'Use callsign-first order, just like real ATC phraseology: <callsign> <command> <value>.',
+    muted('Use callsign-first order, just like real ATC phraseology: <callsign> <command> <value>.'),
     `  ${command('<callsign> speed <knots>')}Set target speed (120-600 kt); decreases at 5 kt/s, increases at 2.5 kt/s`,
     `  ${command('<callsign> heading <degrees>')}Set target heading (0-359°, 0=N); turns at 3°/s`,
     `  ${command('<callsign> altitude <feet>')}Set target altitude; climbs/descends at 250 ft/s`,
@@ -42,9 +42,9 @@ export function renderHelp(): string {
     `  ${warning('runway')} -> ${warning('clear-to-land')} -> wait for "landed" -> ${warning('gate')}`,
     '',
     bold('Tips'),
-    '  - Commands complete over time; watch the IN PROGRESS list for their progress.',
-    '  - Flights highlighted in red need attention (conflict, stall, or collision risk).',
-    '  - Type a callsign and press Tab or Enter to autocomplete it.',
+    `  ${muted('- Commands complete over time; watch the IN PROGRESS list for their progress.')}`,
+    `  ${muted('- Flights highlighted in red need attention (conflict, stall, or collision risk).')}`,
+    `  ${muted('- Type a callsign and press Tab or Enter to autocomplete it.')}`,
     '',
     bold('Examples'),
     '  UAL123 speed 240',
@@ -86,7 +86,7 @@ export function renderGridPositions(flights: Flight[]): string {
   }
 
   const border = `    +${'-'.repeat(GRID_WIDTH)}+`;
-  const gridLines = [bold('GRID POSITIONS'), 'Legend: X=airport, *=multiple flights', border];
+  const gridLines = [bold('GRID POSITIONS'), muted('Legend: X=airport, *=multiple flights'), border];
 
   for (let row = GRID_HEIGHT - 1; row >= 0; row -= 1) {
     const y = Math.round((row / (GRID_HEIGHT - 1)) * GRID_MAX_COORDINATE);
@@ -111,7 +111,7 @@ export function renderAltitudeChart(flights: Flight[]): string {
     chart[row][column] = chart[row][column] === ' ' ? marker : '*';
   }
 
-  const lines = [bold('ALTITUDE CROSS-SECTION'), 'Height vs. distance from airport', `     ${'-'.repeat(ALTITUDE_CHART_WIDTH + 1)}`];
+  const lines = [bold('ALTITUDE CROSS-SECTION'), muted('Height vs. distance from airport'), `     ${'-'.repeat(ALTITUDE_CHART_WIDTH + 1)}`];
   for (let row = 0; row < ALTITUDE_CHART_HEIGHT; row += 1) {
     const altitude = Math.round(ALTITUDE_CHART_MAX - (row / (ALTITUDE_CHART_HEIGHT - 1)) * ALTITUDE_CHART_MAX);
     lines.push(`${String(altitude).padStart(5)} |${chart[row].join('')}`);
@@ -187,7 +187,7 @@ export function renderActiveCommands(commands: ActiveCommand[]): string {
   const lines = ['IN PROGRESS'];
 
   if (!commands.length) {
-    lines.push('No commands in progress.');
+    lines.push(muted('No commands in progress.'));
     return lines.join('\n');
   }
 

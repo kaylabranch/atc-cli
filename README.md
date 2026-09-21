@@ -20,6 +20,7 @@
 - Node.js
 - Vitest
 - tsx
+- picocolors
 
 ## Getting started
 

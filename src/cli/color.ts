@@ -1,22 +1,22 @@
-export function supportsColor(): boolean {
-  return process.stdout.isTTY === true;
-}
+import pc from 'picocolors';
 
-const ansi = {
-  reset: '\u001b[0m',
-  bold: '\u001b[1m',
-  red: '\u001b[31m',
-  yellow: '\u001b[33m',
-  green: '\u001b[32m',
-  cyan: '\u001b[36m',
-  blue: '\u001b[34m',
-  magenta: '\u001b[35m',
-  white: '\u001b[37m',
+const styles = {
+  bold: pc.bold,
+  red: pc.red,
+  yellow: pc.yellow,
+  green: pc.green,
+  cyan: pc.cyan,
+  blue: pc.blue,
+  white: pc.white,
+  dim: pc.dim,
 };
 
-export function colorize(text: string, color: keyof typeof ansi): string {
-  if (!supportsColor()) return text;
-  return `${ansi[color]}${text}${ansi.reset}`;
+export function supportsColor(): boolean {
+  return pc.isColorSupported;
+}
+
+export function colorize(text: string, color: keyof typeof styles): string {
+  return styles[color](text);
 }
 
 export function colorLabels() {
@@ -26,7 +26,8 @@ export function colorLabels() {
     success: (text: string) => colorize(text, 'green'),
     info: (text: string) => colorize(text, 'cyan'),
     accent: (text: string) => colorize(text, 'blue'),
-    bold: (text: string) => colorize(text, 'white'),
+    bold: (text: string) => colorize(text, 'bold'),
+    muted: (text: string) => colorize(text, 'dim'),
   };
 }
 
