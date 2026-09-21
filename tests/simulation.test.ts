@@ -336,6 +336,25 @@ describe('simulation behavior', () => {
     expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(true);
   });
 
+  it('rejects landing clearance when a flight has overshot the airport and is still pointed away', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    flight.x = AIRPORT_X + 3;
+    flight.y = AIRPORT_Y;
+    flight.heading = 90;
+    flight.speed = 180;
+    flight.speedTrend = 'decreasing';
+    flight.altitude = 5000;
+    flight.altitudeTrend = 'decreasing';
+    flight.runway = '77L';
+
+    const result = sim.handleCommand(`${flight.callsign} clear-to-land`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('turned back toward the airport');
+  });
+
   it.each([
     ['speed', 'speed is increasing'],
     ['altitude', 'altitude is increasing'],

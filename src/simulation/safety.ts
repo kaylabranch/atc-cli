@@ -11,6 +11,10 @@ export function detectDanger(flights: Flight[]): Flight[] {
       const first = flights[firstIndex];
       const second = flights[secondIndex];
       if (first.state === 'crashed' || second.state === 'crashed') continue;
+      if (first.statusMessage === 'Lost near airspace boundary - redirected to airport'
+        || second.statusMessage === 'Lost near airspace boundary - redirected to airport') {
+        continue;
+      }
 
       const dx = first.x - second.x;
       const dy = first.y - second.y;

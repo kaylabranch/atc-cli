@@ -300,8 +300,10 @@ export class Simulation {
     const headingCommand = this.pendingCommands.find(
       (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === 'heading',
     );
-    if (headingCommand && !isHeadingTowardAirport(flight, headingCommand.target as number)) {
-      return { ok: false, message: `${flight.callsign} cannot be cleared to land while turning away from the airport.` };
+    const effectiveHeadingTarget = headingCommand ? Number(headingCommand.target) : flight.heading;
+    if (!isHeadingTowardAirport(flight, effectiveHeadingTarget)) {
+      const targetHeading = Math.round((Math.atan2(AIRPORT_X - flight.x, AIRPORT_Y - flight.y) * 180 / Math.PI + 360) % 360);
+      return { ok: false, message: `${flight.callsign} cannot be cleared to land while flying away from the airport; heading is ${Math.round(flight.heading)}° and must be turned back toward the airport (${targetHeading}°).` };
     }
     const landingDurationMs = Math.max(1000, Math.ceil(distanceFromAirport * LANDING_DURATION_MS_PER_GRID_UNIT));
 
