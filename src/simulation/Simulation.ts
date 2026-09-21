@@ -7,7 +7,7 @@ import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
-import { detectDanger, detectStalledFlights, getRunwayAssignmentIssues, isHeadingTowardAirport, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
+import { applySpeedSafety, detectDanger, detectGroundImpacts, detectStalledFlights, getRunwayAssignmentIssues, isHeadingTowardAirport, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -94,8 +94,14 @@ export class Simulation {
       });
     }
 
+    applySpeedSafety(this.flights, elapsedMilliseconds);
     advanceFlightMovement(this.flights, elapsedMilliseconds);
     redirectFlightsAtBoundary(this.flights);
+    const impactedThisTick = detectGroundImpacts(this.flights);
+    for (const flight of impactedThisTick) {
+      this.crashedFlights += 1;
+      this.finishedFlights.add(flight.callsign);
+    }
     const stalledThisTick = detectStalledFlights(this.flights);
     for (const flight of stalledThisTick) {
       this.crashedFlights += 1;

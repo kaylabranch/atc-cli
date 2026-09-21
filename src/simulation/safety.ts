@@ -1,5 +1,5 @@
 import type { Flight } from '../types.js';
-import { AIRPORT_X, AIRPORT_Y, ALTITUDE_RATE_FT_PER_SEC, COLLISION_DISTANCE_UNITS, DANGER_DISTANCE_UNITS, GRID_MAX_COORDINATE, GRID_MIN_COORDINATE, HIGH_SPEED_ATTENTION_THRESHOLD_KTS, LOW_SPEED_ALTITUDE_THRESHOLD_KTS, LOW_SPEED_ATTENTION_THRESHOLD_KTS, MAX_SPEED_KTS, RUNWAY_HEADING_TOLERANCE_DEGREES } from './constants.js';
+import { AIRPORT_X, AIRPORT_Y, ALTITUDE_RATE_FT_PER_SEC, COLLISION_DISTANCE_UNITS, DANGER_DISTANCE_UNITS, GRID_MAX_COORDINATE, GRID_MIN_COORDINATE, HIGH_SPEED_ATTENTION_THRESHOLD_KTS, LOW_SPEED_ALTITUDE_THRESHOLD_KTS, LOW_SPEED_ATTENTION_THRESHOLD_KTS, MAX_SPEED_KTS, MIN_VERTICAL_SEPARATION_FT, RUNWAY_HEADING_TOLERANCE_DEGREES } from './constants.js';
 import { AIRBORNE_STATES } from './movement.js';
 
 /** Flags close-proximity conflicts and mid-air collisions; returns flights that crashed on this tick. */
@@ -19,11 +19,13 @@ export function detectDanger(flights: Flight[]): Flight[] {
       const dx = first.x - second.x;
       const dy = first.y - second.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
+      const verticalSeparation = Math.abs(first.altitude - second.altitude);
+      const verticallyUnsafe = verticalSeparation <= MIN_VERTICAL_SEPARATION_FT;
 
-      if (distance < COLLISION_DISTANCE_UNITS && AIRBORNE_STATES.has(first.state) && AIRBORNE_STATES.has(second.state)) {
+      if (distance < COLLISION_DISTANCE_UNITS && verticallyUnsafe && AIRBORNE_STATES.has(first.state) && AIRBORNE_STATES.has(second.state)) {
         newlyCrashed.add(first);
         newlyCrashed.add(second);
-      } else if (distance < DANGER_DISTANCE_UNITS) {
+      } else if (distance < DANGER_DISTANCE_UNITS && verticallyUnsafe) {
         first.danger = true;
         second.danger = true;
         first.statusMessage = 'Conflict alert';

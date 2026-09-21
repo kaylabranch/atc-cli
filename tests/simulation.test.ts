@@ -159,6 +159,19 @@ describe('simulation behavior', () => {
     expect(flight.statusMessage).toBe('Stalled - lost airspeed and crashed');
   });
 
+  it('loses altitude at low speed and crashes when altitude reaches zero', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    flight.altitude = 100;
+    flight.speed = 100;
+
+    sim.step(1000);
+
+    expect(flight.altitude).toBe(0);
+    expect(flight.state).toBe('crashed');
+    expect(flight.statusMessage).toBe('Ground impact - altitude reached zero');
+  });
+
   it('removes crashed flights from active flights and attention counters', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
@@ -386,7 +399,7 @@ describe('simulation behavior', () => {
     const result = sim.handleCommand(`${flight.callsign} clear-to-land`);
 
     expect(result.ok).toBe(false);
-    expect(result.message).toContain('turning away from the airport');
+    expect(result.message).toContain('flying away from the airport');
   });
 
   it('scales landing duration to two seconds per grid unit', () => {
@@ -620,13 +633,16 @@ describe('simulation behavior', () => {
 
     firstFlight.x = 10;
     firstFlight.y = 10;
-    firstFlight.speed = 0;
+    firstFlight.altitude = 10000;
+    firstFlight.speed = 200;
     secondFlight.x = 10;
     secondFlight.y = 10;
-    secondFlight.speed = 0;
+    secondFlight.altitude = 10000;
+    secondFlight.speed = 200;
     thirdFlight.x = 10;
     thirdFlight.y = 10;
-    thirdFlight.speed = 0;
+    thirdFlight.altitude = 10000;
+    thirdFlight.speed = 200;
 
     sim.step();
 
@@ -636,6 +652,31 @@ describe('simulation behavior', () => {
     expect(sim.isGameOver()).toBe(true);
     expect(sim.renderStatusBoard()).toContain('Crashed: 3');
     expect(sim.renderStatusBoard()).toContain('TERMINATED');
+  });
+
+  it('does not flag a horizontal overlap when flights have safe vertical separation', () => {
+    const sim = new Simulation();
+    const [firstFlight, secondFlight] = sim.getFlights();
+
+    firstFlight.x = 10;
+    firstFlight.y = 10;
+    firstFlight.altitude = 10000;
+    firstFlight.speed = 200;
+    secondFlight.x = 10;
+    secondFlight.y = 10;
+    secondFlight.altitude = 10150;
+    secondFlight.speed = 200;
+    const thirdFlight = sim.getFlights()[2];
+    thirdFlight.x = 30;
+    thirdFlight.y = 30;
+    thirdFlight.speed = 200;
+
+    sim.step();
+
+    expect(firstFlight.state).not.toBe('crashed');
+    expect(secondFlight.state).not.toBe('crashed');
+    expect(firstFlight.danger).toBe(false);
+    expect(secondFlight.danger).toBe(false);
   });
 
   it('reports a promotion outcome when every flight completes without a crash', () => {
