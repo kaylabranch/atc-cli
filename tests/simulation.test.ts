@@ -75,16 +75,20 @@ describe('simulation behavior', () => {
     expect(sim.isCommandInProgress(flight.callsign, 'speed')).toBe(false);
   });
 
-  it('rejects a duplicate command while the same action is in progress', () => {
+  it('replaces a pending command when a different value is submitted for the same action', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
+    flight.speed = 180;
 
-    expect(sim.handleCommand(`${flight.callsign} speed 240`).ok).toBe(true);
-    const duplicate = sim.handleCommand(`${flight.callsign} speed 260`);
+    expect(sim.handleCommand(`${flight.callsign} speed 220`).ok).toBe(true);
+    const override = sim.handleCommand(`${flight.callsign} speed 260`);
 
-    expect(duplicate.ok).toBe(false);
-    expect(duplicate.message).toContain('already has a speed command in progress');
+    expect(override.ok).toBe(true);
+    expect(override.message).toContain('Command accepted');
     expect(sim.getActiveCommands()).toHaveLength(1);
+
+    sim.step(30000);
+    expect(sim.getFlight(flight.callsign)?.speed).toBe(260);
   });
 
   it('uses elapsed time for a large speed increase at 5 kt/s', () => {

@@ -366,12 +366,51 @@ export class Simulation {
     durationMs: number,
     motion?: Motion,
   ): CommandResult {
-    if (this.pendingCommands.isInProgress(flight.callsign, action)) {
-      return { ok: false, message: `${flight.callsign} already has a ${action} command in progress.` };
+    const existingCommand = this.pendingCommands.find(
+      (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === action,
+    );
+
+    if (existingCommand) {
+      if (String(existingCommand.target).toLowerCase() === String(target).toLowerCase()) {
+        return { ok: false, message: `${flight.callsign} already has a ${action} command pending for ${String(target)}.` };
+      }
+
+      this.pendingCommands.remove(existingCommand);
+      const replacementDurationMs = this.getCommandDuration(flight, action, target, durationMs);
+      this.pendingCommands.add(flight, action, target, description, replacementDurationMs, motion);
+      return { ok: true, message: `Command accepted for ${flight.callsign}: ${description}.` };
     }
 
     this.pendingCommands.add(flight, action, target, description, durationMs, motion);
     return { ok: true, message: `Command accepted for ${flight.callsign}: ${description}.` };
+  }
+
+  private getCommandDuration(
+    flight: Flight,
+    action: PendingAction,
+    target: string | number,
+    fallbackDurationMs: number,
+  ): number {
+    switch (action) {
+      case 'speed': {
+        const speedTarget = Number(target);
+        const delta = Math.abs(speedTarget - flight.speed);
+        const rate = speedTarget < flight.speed ? SPEED_DECREASE_RATE_KT_PER_SEC : SPEED_INCREASE_RATE_KT_PER_SEC;
+        return Math.max(1000, Math.ceil((delta / rate) * 1000));
+      }
+      case 'heading': {
+        const headingTarget = Number(target);
+        const turnDistance = Math.abs(((headingTarget - flight.heading + 540) % 360) - 180);
+        return Math.max(1000, Math.ceil((turnDistance / 3) * 1000));
+      }
+      case 'altitude': {
+        const altitudeTarget = Number(target);
+        const delta = Math.abs(altitudeTarget - flight.altitude);
+        return Math.max(1000, Math.ceil((delta / 250) * 1000));
+      }
+      default:
+        return fallbackDurationMs;
+    }
   }
 
   private isGateAvailable(gate: string, excludedCallsign: string): boolean {
