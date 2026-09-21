@@ -121,23 +121,27 @@ Movement distance each tick scales directly with a flight's current speed, so a 
 
 ```text
 src/
+  -- application source code for the simulation, CLI, and shared game types.
   cli/
-    color.ts
-    commandParser.ts
-    renderer.ts
+    -- command parsing, terminal styling, and user-facing dashboard rendering.
+    color.ts            -- terminal color helpers and progress bar styling used in the dashboard.
+    commandParser.ts    -- parses ATC commands, validates command order, and supports callsign completion.
+    renderer.ts         -- builds the help screen, status board, airport layout, grid, and altitude chart.
   simulation/
-    constants.ts
-    flightFactory.ts
-    lifecycle.ts
-    movement.ts
-    pendingCommands.ts
-    safety.ts
-    Simulation.ts
-  index.ts
-  types.ts
+    -- gameplay logic for flight motion, commands, safety checks, and simulation lifecycle events.
+    constants.ts        -- shared config values such as runway/gate counts, tick timing, and safety thresholds.
+    flightFactory.ts    -- creates the starting flights with randomized callsigns, origin, and initial state.
+    lifecycle.ts        -- applies completed pending actions like landing, taxiing, unloading, and aborting.
+    movement.ts         -- updates airborne aircraft positions based on heading, speed, and elapsed time.
+    pendingCommands.ts  -- tracks in-progress commands, progress percentages, and command durations.
+    safety.ts           -- collision detection, stall logic, boundary redirection, and runway validation.
+    Simulation.ts       -- the core simulation engine, game state, and command handling for all aircraft.
+  index.ts             -- CLI entry point, REPL loop, slash-command menu, and interactive terminal behavior.
+  types.ts             -- shared TypeScript types for flights, commands, and simulation results.
 
 tests/
-  simulation.test.ts
+  -- automated regression tests for the simulation's core behavior and edge cases.
+  simulation.test.ts   -- Vitest suite covering command parsing, movement, landing, runway logic, and crash scenarios.
 ```
 
 ## Notes
