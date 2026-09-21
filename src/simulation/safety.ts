@@ -81,12 +81,12 @@ function headingToAirport(flight: Flight): number {
   return (Math.atan2(deltaX, deltaY) * 180 / Math.PI + 360) % 360;
 }
 
-export function isHeadingTowardAirport(flight: Flight): boolean {
+export function isHeadingTowardAirport(flight: Flight, heading = flight.heading): boolean {
   const deltaX = AIRPORT_X - flight.x;
   const deltaY = AIRPORT_Y - flight.y;
   if (deltaX === 0 && deltaY === 0) return true;
 
-  const difference = Math.abs(((flight.heading - headingToAirport(flight) + 540) % 360) - 180);
+  const difference = Math.abs(((heading - headingToAirport(flight) + 540) % 360) - 180);
   return difference <= RUNWAY_HEADING_TOLERANCE_DEGREES;
 }
 

@@ -33,7 +33,7 @@ export function renderHelp(): string {
     `  ${command('<callsign> heading <degrees>')}Set target heading (0-359°, 0=N); turns at 3°/s`,
     `  ${command('<callsign> altitude <feet>')}Set target altitude; climbs/descends at 250 ft/s`,
     `  ${command('<callsign> runway <77L|77R>')}Assign a runway; requires heading at the airport with decreasing speed and altitude`,
-    `  ${command('<callsign> clear-to-land')}Begin a 15s landing; requires a completed runway assignment`,
+    `  ${command('<callsign> clear-to-land')}Begin landing at 2s per grid unit; requires a runway and approach within 10 grid units`,
     `  ${command('<callsign> abort-landing')}Cancel an active landing and climb back to altitude and speed`,
     `  ${command('<callsign> gate <A1|A2|A3>')}Assign a gate once landed; taxis 10s, then unloads 10s`,
     `  ${command('<callsign> hold <left|right>')}Enter an airborne holding pattern; currently follows its heading`,

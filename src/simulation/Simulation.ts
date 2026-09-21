@@ -1,13 +1,13 @@
 import { parseCommand } from '../cli/commandParser.js';
 import { renderActiveCommands, renderAirportLayout, renderAltitudeChart, renderFlightDetail, renderGameOverSummary, renderGridPositions, renderHelp, renderSideBySide, renderStatusBoard } from '../cli/renderer.js';
 import type { ActiveCommand, CommandResult, Flight } from '../types.js';
-import { ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS, MAX_SPEED_KTS, MIN_SPEED_KTS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
+import { AIRPORT_X, AIRPORT_Y, ALTITUDE_RATE_FT_PER_SEC, GATE_COUNT, LANDING_DURATION_MS_PER_GRID_UNIT, MAX_LANDING_CLEARANCE_DISTANCE_UNITS, MAX_SPEED_KTS, MIN_SPEED_KTS, RUNWAY_COUNT, SPEED_DECREASE_RATE_KT_PER_SEC, SPEED_INCREASE_RATE_KT_PER_SEC, STARTING_FLIGHT_COUNT, TICK_MS } from './constants.js';
 import { generateFlights } from './flightFactory.js';
 import { applyPendingCommand } from './lifecycle.js';
 import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
-import { detectDanger, detectStalledFlights, getRunwayAssignmentIssues, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
+import { detectDanger, detectStalledFlights, getRunwayAssignmentIssues, isHeadingTowardAirport, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -274,13 +274,38 @@ export class Simulation {
     const flight = this.getFlight(args[0]);
     if (!flight) return { ok: false, message: `No flight found with callsign ${args[0]}.` };
     if (!flight.runway) return { ok: false, message: `${flight.callsign} must be assigned a runway before landing clearance.` };
+    const distanceFromAirport = Math.sqrt((flight.x - AIRPORT_X) ** 2 + (flight.y - AIRPORT_Y) ** 2);
+    if (distanceFromAirport > MAX_LANDING_CLEARANCE_DISTANCE_UNITS) {
+      return { ok: false, message: `${flight.callsign} is ${Math.round(distanceFromAirport)} grid units from the airport; landing clearance requires being within ${MAX_LANDING_CLEARANCE_DISTANCE_UNITS} grid units.` };
+    }
+    const speedCommand = this.pendingCommands.find(
+      (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === 'speed',
+    );
+    if (flight.speedTrend !== 'decreasing' || (speedCommand && (speedCommand.target as number) > flight.speed)) {
+      const speedTrend = speedCommand && (speedCommand.target as number) > flight.speed ? 'increasing' : flight.speedTrend;
+      return { ok: false, message: `${flight.callsign} cannot be cleared to land while speed is ${speedTrend}; speed must be decreasing.` };
+    }
+    const altitudeCommand = this.pendingCommands.find(
+      (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === 'altitude',
+    );
+    if (flight.altitudeTrend !== 'decreasing' || (altitudeCommand && (altitudeCommand.target as number) > flight.altitude)) {
+      const altitudeTrend = altitudeCommand && (altitudeCommand.target as number) > flight.altitude ? 'increasing' : flight.altitudeTrend;
+      return { ok: false, message: `${flight.callsign} cannot be cleared to land while altitude is ${altitudeTrend}; altitude must be decreasing.` };
+    }
+    const headingCommand = this.pendingCommands.find(
+      (command) => command.callsign.toLowerCase() === flight.callsign.toLowerCase() && command.action === 'heading',
+    );
+    if (headingCommand && !isHeadingTowardAirport(flight, headingCommand.target as number)) {
+      return { ok: false, message: `${flight.callsign} cannot be cleared to land while turning away from the airport.` };
+    }
+    const landingDurationMs = Math.max(1000, Math.ceil(distanceFromAirport * LANDING_DURATION_MS_PER_GRID_UNIT));
 
     const result = this.queueCommand(
       flight,
       'clear-to-land',
       '',
       'Landing',
-      LANDING_DURATION_MS,
+      landingDurationMs,
       {
         startAltitude: flight.altitude,
         startSpeed: flight.speed,
@@ -313,7 +338,7 @@ export class Simulation {
       'abort-landing',
       '',
       'Abort landing - climbing',
-      LANDING_DURATION_MS,
+      landingCommand.durationMs,
       {
         startAltitude: flight.altitude,
         startSpeed: flight.speed,

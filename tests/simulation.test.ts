@@ -5,7 +5,9 @@ import { renderAltitudeChart, renderGridPositions } from '../src/cli/renderer.js
 import { AIRPORT_X, AIRPORT_Y } from '../src/simulation/constants.js';
 import { Simulation } from '../src/simulation/Simulation.js';
 
-function prepareForRunway(flight: ReturnType<Simulation['getFlights']>[number]): void {
+function prepareForRunway(flight: ReturnType<Simulation['getFlights']>[number], position = 0): void {
+  flight.x = AIRPORT_X + 3 + position * 4;
+  flight.y = AIRPORT_Y;
   flight.heading = (Math.atan2(AIRPORT_X - flight.x, AIRPORT_Y - flight.y) * 180 / Math.PI + 360) % 360;
   flight.speedTrend = 'decreasing';
   flight.altitudeTrend = 'decreasing';
@@ -251,6 +253,87 @@ describe('simulation behavior', () => {
     expect(sim.handleCommand(`${flight.callsign} runway 77L`).ok).toBe(true);
   });
 
+  it('requires a flight to be within 10 grid units of the airport for landing clearance', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    prepareForRunway(flight);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
+    sim.step(2000);
+    flight.x = AIRPORT_X + 10;
+    flight.y = AIRPORT_Y;
+    expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(true);
+  });
+
+  it.each([
+    ['speed', 'speed is increasing'],
+    ['altitude', 'altitude is increasing'],
+  ])('rejects landing clearance while %s is increasing', (command, expectedMessage) => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    prepareForRunway(flight);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
+    sim.step(2000);
+    const target = command === 'speed' ? flight.speed + 10 : flight.altitude + 1000;
+    expect(sim.handleCommand(`${flight.callsign} ${command} ${target}`).ok).toBe(true);
+
+    const result = sim.handleCommand(`${flight.callsign} clear-to-land`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain(expectedMessage);
+  });
+
+  it('rejects landing clearance while a heading command turns away from the airport', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    prepareForRunway(flight);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
+    sim.step(2000);
+    expect(sim.handleCommand(`${flight.callsign} heading 90`).ok).toBe(true);
+
+    const result = sim.handleCommand(`${flight.callsign} clear-to-land`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('turning away from the airport');
+  });
+
+  it('scales landing duration to two seconds per grid unit', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    prepareForRunway(flight);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
+    sim.step(2000);
+    flight.x = AIRPORT_X + 3;
+    flight.y = AIRPORT_Y;
+    expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(true);
+
+    sim.step(5999);
+    expect(flight.state).toBe('landing');
+    sim.step(1);
+    expect(flight.state).toBe('landed');
+  });
+
+  it('rejects landing clearance when a flight is more than 10 grid units from the airport', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    prepareForRunway(flight);
+    sim.handleCommand(`${flight.callsign} runway 77L`);
+    sim.step(2000);
+    flight.x = AIRPORT_X + 11;
+    flight.y = AIRPORT_Y;
+
+    const result = sim.handleCommand(`${flight.callsign} clear-to-land`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('within 10 grid units');
+    expect(flight.state).not.toBe('landing');
+    expect(sim.getActiveCommands()).toHaveLength(0);
+  });
+
   it('explains exactly why a runway assignment was rejected', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
@@ -286,8 +369,8 @@ describe('simulation behavior', () => {
     const sim = new Simulation();
     const [firstFlight, secondFlight] = sim.getFlights();
 
-    prepareForRunway(firstFlight);
-    prepareForRunway(secondFlight);
+    prepareForRunway(firstFlight, 0);
+    prepareForRunway(secondFlight, 1);
     expect(sim.handleCommand(`${firstFlight.callsign} runway 77L`).ok).toBe(true);
     sim.step(2000);
     expect(sim.handleCommand(`${secondFlight.callsign} runway 77L`).ok).toBe(false);
@@ -337,6 +420,7 @@ describe('simulation behavior', () => {
 
     expect(sim.handleCommand(`${flight.callsign} clear-to-land`).ok).toBe(false);
     prepareForRunway(flight);
+    flight.x = AIRPORT_X + 5;
     sim.handleCommand(`${flight.callsign} runway 77L`);
     sim.step(2000);
     sim.handleCommand(`${flight.callsign} clear-to-land`);
@@ -396,8 +480,8 @@ describe('simulation behavior', () => {
     const flights = sim.getFlights();
 
     expect(flights).toHaveLength(3);
-    prepareForRunway(flights[0]);
-    prepareForRunway(flights[1]);
+    prepareForRunway(flights[0], 0);
+    prepareForRunway(flights[1], 1);
     sim.handleCommand(`${flights[0].callsign} runway 77L`);
     sim.handleCommand(`${flights[1].callsign} runway 77R`);
     sim.step(2000);
@@ -452,8 +536,8 @@ describe('simulation behavior', () => {
     const sim = new Simulation();
     const flights = sim.getFlights();
 
-    prepareForRunway(flights[0]);
-    prepareForRunway(flights[1]);
+    prepareForRunway(flights[0], 0);
+    prepareForRunway(flights[1], 1);
     sim.handleCommand(`${flights[0].callsign} runway 77L`);
     sim.handleCommand(`${flights[1].callsign} runway 77R`);
     sim.step(2000);
