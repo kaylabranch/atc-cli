@@ -242,7 +242,9 @@ export class Simulation {
     if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
 
     const heading = Math.round(Number(rawHeading));
-    if (Number.isNaN(heading)) return { ok: false, message: 'Heading must be a number.' };
+    if (!Number.isFinite(heading) || heading < 0 || heading > 360) {
+      return { ok: false, message: 'Heading must be a number from 0 to 360 degrees.' };
+    }
 
     const turnDistance = Math.abs(((heading - flight.heading + 540) % 360) - 180);
     const durationMs = Math.max(1000, Math.ceil((turnDistance / 3) * 1000));

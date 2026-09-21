@@ -72,7 +72,7 @@ export function renderGridPositions(flights: Flight[]): string {
   const crashCells = new Set<string>();
 
   const airportRow = Math.round((AIRPORT_Y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
-  cells[airportRow][AIRPORT_X] = 'X';
+  cells[airportRow][AIRPORT_X] = 'A';
 
   for (const [index, flight] of airborneFlights.entries()) {
     const marker = flight.state === 'crashed' ? 'X' : String(index + 1);
@@ -82,7 +82,7 @@ export function renderGridPositions(flights: Flight[]): string {
 
     if (cells[row][x] === ' ') {
       cells[row][x] = marker;
-    } else if (cells[row][x] !== 'X') {
+    } else if (cells[row][x] !== 'A' && cells[row][x] !== 'X') {
       if (flight.state === 'crashed' || cells[row][x] === '*') {
         cells[row][x] = 'X';
         crashCells.add(`${row}:${x}`);
@@ -98,7 +98,7 @@ export function renderGridPositions(flights: Flight[]): string {
   }
 
   const border = `    +${'-'.repeat(GRID_WIDTH)}+`;
-  const gridLines = [bold('GRID POSITIONS'), muted('Legend: X=airport/crash, *=multiple flights'), border];
+  const gridLines = [bold('GRID POSITIONS'), muted('Legend: A=airport, X=crash, *=multiple flights'), border];
 
   for (let row = GRID_HEIGHT - 1; row >= 0; row -= 1) {
     const y = Math.round((row / (GRID_HEIGHT - 1)) * GRID_MAX_COORDINATE);

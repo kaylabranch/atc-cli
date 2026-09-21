@@ -197,6 +197,17 @@ describe('simulation behavior', () => {
     expect(sim.getActiveCommands()[0].progress).toBe(3);
   });
 
+  it.each(['-1', '361', '900', 'Infinity'])('rejects an out-of-range heading: %s', (rawHeading) => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    const result = sim.handleCommand(`${flight.callsign} heading ${rawHeading}`);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe('Heading must be a number from 0 to 360 degrees.');
+    expect(sim.getActiveCommands()).toHaveLength(0);
+  });
+
   it('shows the status board for all flights', () => {
     const sim = new Simulation();
     const board = sim.renderStatusBoard();
@@ -237,8 +248,8 @@ describe('simulation behavior', () => {
     const flights = sim.getFlights();
 
     expect(grid).toContain('GRID POSITIONS');
-    expect(grid).toContain('Legend: X=airport/crash, *=multiple flights');
-    expect(grid).toContain('X');
+    expect(grid).toContain('Legend: A=airport, X=crash, *=multiple flights');
+    expect(grid).toContain('A');
     expect(grid).toContain('1');
     expect(grid).toContain(`+${'-'.repeat(31)}+`);
   });
@@ -259,7 +270,7 @@ describe('simulation behavior', () => {
     const grid = renderGridPositions(sim.getFlights());
     const gridCells = [...grid.matchAll(/\|([^|]*)\|/g)].map((match) => match[1]).join('');
 
-    expect(grid).toContain('Legend: X=airport/crash, *=multiple flights');
+    expect(grid).toContain('Legend: A=airport, X=crash, *=multiple flights');
     expect(gridCells).not.toContain('*');
     expect(gridCells).toContain('X');
   });

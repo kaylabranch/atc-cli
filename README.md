@@ -158,7 +158,7 @@ logs/
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
 
-When the terminal session exits, controller commands and automatic flight outcomes are saved to a timestamped file in `logs/`. Entries are grouped by flight callsign and include accepted or rejected commands, state changes, crashes, landings, and completed flights.
+When the terminal session exits, controller commands and automatic flight outcomes are saved to a timestamped file in `logs/`. Entries are grouped by flight callsign and include accepted or rejected commands, state changes, crashes, landings, and completed flights. Logs are primarily useful for debugging in this case, but of course would be mandatory in a regulated environment.
 
 ## Future Enhancements
 
