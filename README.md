@@ -163,7 +163,4 @@ When the terminal session exits, controller commands and automatic flight outcom
 ## Future Enhancements
 
 - Generate replacement flights over time after the initial three-flight session.
-- Add explicit aircraft movement commands and more detailed position tracking.
-- Expand collision, proximity, and crash scenarios with clearer recovery actions.
 - Add runway and gate occupancy management as traffic volume grows.
-- Improve ATC phraseology and add more command validation guidance.
