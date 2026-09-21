@@ -1,0 +1,15 @@
+ATC CLI SIMULATION LOG
+Started: 2026-09-21T18:45:21.030Z
+Saved: 2026-09-21T18:46:37.146Z
+
+FLIGHT SWA871 | Origin: KSEA
+[2026-09-21T18:45:27.172Z] COMMAND accepted: SWA871 heading 200 - Command accepted for SWA871: Heading to 200°.
+[2026-09-21T18:45:33.157Z] COMMAND accepted: SWA871 speed 0 - Command accepted for SWA871: Speed to 0 kt.
+[2026-09-21T18:46:15.380Z] OUTCOME: approach -> crashed - Stalled - lost airspeed and crashed
+
+FLIGHT SWA258 | Origin: KSEA
+[2026-09-21T18:45:50.974Z] COMMAND accepted: SWA258 heading 900 - Command accepted for SWA258: Heading to 900°.
+
+FLIGHT UAL943 | Origin: KDEN
+[2026-09-21T18:45:43.374Z] COMMAND accepted: UAL943 speed 700 - Command accepted for UAL943: Speed to 700 kt.
+

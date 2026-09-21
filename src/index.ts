@@ -188,6 +188,8 @@ rl.on('line', (input) => {
 
 rl.on('close', () => {
   clearInterval(interval);
+  const logPath = simulation.saveLog();
+  if (logPath) console.log(`Session log saved to ${logPath}`);
 });
 
 renderScreen(true);

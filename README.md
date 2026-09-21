@@ -122,6 +122,9 @@ Movement distance each tick scales directly with a flight's current speed, so a 
 ```text
 src/
   -- application source code for the simulation, CLI, and shared game types.
+  logging/
+    -- session logging for controller actions and automatic flight outcomes.
+    gameLogger.ts       -- groups each flight's commands and outcomes into a timestamped log file.
   cli/
     -- command parsing, terminal styling, and user-facing dashboard rendering.
     color.ts            -- terminal color helpers and progress bar styling used in the dashboard.
@@ -142,6 +145,9 @@ src/
 tests/
   -- automated regression tests for the simulation's core behavior and edge cases.
   simulation.test.ts   -- Vitest suite covering command parsing, movement, landing, runway logic, and crash scenarios.
+
+logs/
+  -- generated session logs. Each file uses the format MMDDYYYY-HHmm.log.
 ```
 
 ## Notes
@@ -151,6 +157,8 @@ tests/
 - Airborne movement is displayed at 1.5 times the base speed conversion.
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
+
+When the terminal session exits, controller commands and automatic flight outcomes are saved to a timestamped file in `logs/`. Entries are grouped by flight callsign and include accepted or rejected commands, state changes, crashes, landings, and completed flights.
 
 ## Future Enhancements
 

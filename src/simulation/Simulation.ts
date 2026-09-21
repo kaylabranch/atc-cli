@@ -8,6 +8,7 @@ import type { Motion, PendingAction } from './pendingCommands.js';
 import { PendingCommands } from './pendingCommands.js';
 import { advanceFlightMovement } from './movement.js';
 import { applySpeedSafety, detectDanger, detectGroundImpacts, detectStalledFlights, getRunwayAssignmentIssues, isHeadingTowardAirport, isRunwayAvailable, redirectFlightsAtBoundary } from './safety.js';
+import { GameLogger } from '../logging/gameLogger.js';
 
 export class Simulation {
   private flights: Flight[] = [];
@@ -20,11 +21,13 @@ export class Simulation {
   private crashedFlights = 0;
   private gameOver = false;
   private readonly pendingCommands = new PendingCommands();
+  private readonly logger: GameLogger;
 
   constructor() {
     this.runways = RUNWAY_COUNT;
     this.gates = GATE_COUNT;
     this.flights = generateFlights();
+    this.logger = new GameLogger(this.flights);
   }
 
   getFlight(callsign: string): Flight | undefined {
@@ -78,8 +81,13 @@ export class Simulation {
     this.paused = true;
   }
 
+  saveLog(): string {
+    return this.logger.save();
+  }
+
   step(elapsedMilliseconds = TICK_MS): void {
     if (!this.running || this.paused) return;
+    const previousStates = new Map(this.flights.map((flight) => [flight.callsign, flight.state]));
     const completedCommands = this.pendingCommands.advance(elapsedMilliseconds, (callsign) => this.getFlight(callsign));
     for (const command of completedCommands) {
       applyPendingCommand(command, {
@@ -90,6 +98,8 @@ export class Simulation {
         markCompleted: (callsign) => {
           this.completedFlights += 1;
           this.finishedFlights.add(callsign);
+          const completedFlight = this.getFlight(callsign);
+          if (completedFlight) this.logger.logOutcome(completedFlight, 'Completed - flight removed after unloading passengers');
         },
       });
     }
@@ -112,49 +122,56 @@ export class Simulation {
       this.crashedFlights += 1;
       this.finishedFlights.add(flight.callsign);
     }
+    for (const flight of this.flights) {
+      const previousState = previousStates.get(flight.callsign);
+      if (previousState) this.logger.logStateChange(flight, previousState);
+    }
     this.checkGameOver();
   }
 
   handleCommand(input: string): CommandResult {
     const { action, args } = parseCommand(input);
-
-    switch (action) {
-      case 'help':
-        return { ok: true, message: renderHelp() };
-      case 'close-help':
-        return { ok: true, message: '' };
-      case 'legacy-order': {
-        const [attemptedCommand] = args;
-        return { ok: false, message: `Flight commands use callsign-first order: <callsign> ${attemptedCommand} <value>.` };
+    const result = (() => {
+      switch (action) {
+        case 'help':
+          return { ok: true, message: renderHelp() };
+        case 'close-help':
+          return { ok: true, message: '' };
+        case 'legacy-order': {
+          const [attemptedCommand] = args;
+          return { ok: false, message: `Flight commands use callsign-first order: <callsign> ${attemptedCommand} <value>.` };
+        }
+        case 'status':
+          return this.handleStatus(args);
+        case 'speed':
+          return this.handleSpeed(args);
+        case 'heading':
+          return this.handleHeading(args);
+        case 'altitude':
+          return this.handleAltitude(args);
+        case 'gate':
+          return this.handleGate(args);
+        case 'runway':
+          return this.handleRunway(args);
+        case 'clear-to-land':
+          return this.handleClearToLand(args);
+        case 'abort-landing':
+          return this.handleAbortLanding(args);
+        case 'pause':
+          this.paused = true;
+          return { ok: true, message: 'Simulation paused.' };
+        case 'resume':
+          this.paused = false;
+          return { ok: true, message: 'Simulation resumed.' };
+        case 'exit':
+          this.running = false;
+          return { ok: true, message: 'Simulation ended. Goodbye.' };
+        default:
+          return { ok: false, message: `Unknown command: ${action}. Type help for available commands.` };
       }
-      case 'status':
-        return this.handleStatus(args);
-      case 'speed':
-        return this.handleSpeed(args);
-      case 'heading':
-        return this.handleHeading(args);
-      case 'altitude':
-        return this.handleAltitude(args);
-      case 'gate':
-        return this.handleGate(args);
-      case 'runway':
-        return this.handleRunway(args);
-      case 'clear-to-land':
-        return this.handleClearToLand(args);
-      case 'abort-landing':
-        return this.handleAbortLanding(args);
-      case 'pause':
-        this.paused = true;
-        return { ok: true, message: 'Simulation paused.' };
-      case 'resume':
-        this.paused = false;
-        return { ok: true, message: 'Simulation resumed.' };
-      case 'exit':
-        this.running = false;
-        return { ok: true, message: 'Simulation ended. Goodbye.' };
-      default:
-        return { ok: false, message: `Unknown command: ${action}. Type help for available commands.` };
-    }
+    })();
+    this.logger.logCommand(input, result);
+    return result;
   }
 
   renderStatusBoard(): string {
