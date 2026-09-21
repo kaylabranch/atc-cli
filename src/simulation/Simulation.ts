@@ -51,6 +51,12 @@ export class Simulation {
     return this.pendingCommands.getActive();
   }
 
+  isCommandInProgress(callsign: string, action: string): boolean {
+    return this.pendingCommands.all.some((command) =>
+      command.callsign.toLowerCase() === callsign.toLowerCase() && command.action === action
+    );
+  }
+
   isPaused(): boolean {
     return this.paused;
   }

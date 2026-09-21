@@ -61,6 +61,7 @@ describe('simulation behavior', () => {
     expect(outcome.ok).toBe(true);
     expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
     expect(sim.getActiveCommands()).toHaveLength(1);
+    expect(sim.isCommandInProgress(flight.callsign, 'speed')).toBe(true);
 
     sim.step();
     expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
@@ -70,6 +71,7 @@ describe('simulation behavior', () => {
     sim.step();
     expect(sim.getFlight(flight.callsign)?.speed).toBe(targetSpeed);
     expect(sim.getActiveCommands()).toHaveLength(0);
+    expect(sim.isCommandInProgress(flight.callsign, 'speed')).toBe(false);
   });
 
   it('rejects a duplicate command while the same action is in progress', () => {

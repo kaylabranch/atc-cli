@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as readline from 'node:readline';
-import { completeCallsign } from './cli/commandParser.js';
+import { completeCallsign, parseCommand } from './cli/commandParser.js';
 import { Simulation } from './simulation/Simulation.js';
 
 const args = process.argv.slice(2);
@@ -45,6 +45,7 @@ const rl = readline.createInterface({
 const output = process.stdout;
 const interactiveTerminal = output.isTTY === true;
 let lastMessage = '';
+let lastPendingCommand: { callsign: string; action: string } | null = null;
 let slashMenuIndex: number | null = null;
 let slashMenuQuery = '';
 let suppressNextSlashMenuUpdate = false;
@@ -147,6 +148,10 @@ const interval = setInterval(() => {
 
   if (simulation.isRunning() && !simulation.isPaused()) {
     simulation.step(elapsedMilliseconds);
+    if (lastPendingCommand && !simulation.isCommandInProgress(lastPendingCommand.callsign, lastPendingCommand.action)) {
+      lastMessage = '';
+      lastPendingCommand = null;
+    }
     renderScreen(simulation.isRunning());
   }
 }, simulation.getTickMs());
@@ -165,8 +170,12 @@ rl.on('line', (input) => {
     return;
   }
 
+  const parsedCommand = parseCommand(trimmed);
   const result = simulation.handleCommand(trimmed);
   lastMessage = result.message;
+  lastPendingCommand = result.ok && parsedCommand.args[0] && simulation.isCommandInProgress(parsedCommand.args[0], parsedCommand.action)
+    ? { callsign: parsedCommand.args[0], action: parsedCommand.action }
+    : null;
 
   if (trimmed.toLowerCase() === 'exit') {
     clearInterval(interval);
