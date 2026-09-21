@@ -1,5 +1,5 @@
 import type { Flight } from '../types.js';
-import { AIRPORT_X, AIRPORT_Y, COLLISION_DISTANCE_UNITS, DANGER_DISTANCE_UNITS, GRID_MAX_COORDINATE, GRID_MIN_COORDINATE, RUNWAY_HEADING_TOLERANCE_DEGREES } from './constants.js';
+import { AIRPORT_X, AIRPORT_Y, ALTITUDE_RATE_FT_PER_SEC, COLLISION_DISTANCE_UNITS, DANGER_DISTANCE_UNITS, GRID_MAX_COORDINATE, GRID_MIN_COORDINATE, HIGH_SPEED_ATTENTION_THRESHOLD_KTS, LOW_SPEED_ALTITUDE_THRESHOLD_KTS, LOW_SPEED_ATTENTION_THRESHOLD_KTS, MAX_SPEED_KTS, RUNWAY_HEADING_TOLERANCE_DEGREES } from './constants.js';
 import { AIRBORNE_STATES } from './movement.js';
 
 /** Flags close-proximity conflicts and mid-air collisions; returns flights that crashed on this tick. */
@@ -39,6 +39,27 @@ export function detectDanger(flights: Flight[]): Flight[] {
 
 const STALL_EXEMPT_STATES = new Set(['landing']);
 
+/** Applies low-speed attention and the connected loss of altitude before crash checks. */
+export function applySpeedSafety(flights: Flight[], elapsedMilliseconds: number): void {
+  const elapsedSeconds = elapsedMilliseconds / 1000;
+
+  for (const flight of flights) {
+    if (!AIRBORNE_STATES.has(flight.state) || flight.state === 'landing' || flight.state === 'crashed') continue;
+
+    if (flight.speed < LOW_SPEED_ATTENTION_THRESHOLD_KTS || flight.speed > HIGH_SPEED_ATTENTION_THRESHOLD_KTS) {
+      flight.danger = true;
+      flight.statusMessage = flight.speed < LOW_SPEED_ATTENTION_THRESHOLD_KTS
+        ? `Low speed - ${Math.round(flight.speed)} kt requires attention`
+        : `High speed - ${Math.round(flight.speed)} kt requires attention`;
+    }
+
+    if (flight.speed < LOW_SPEED_ALTITUDE_THRESHOLD_KTS && flight.speed > 0) {
+      flight.altitude = Math.max(0, flight.altitude - ALTITUDE_RATE_FT_PER_SEC * elapsedSeconds);
+      flight.altitudeTrend = 'decreasing';
+    }
+  }
+}
+
 /** Airborne flights that lose all airspeed (outside a controlled landing) stall and crash; returns those newly crashed. */
 export function detectStalledFlights(flights: Flight[]): Flight[] {
   const stalled: Flight[] = [];
@@ -46,6 +67,13 @@ export function detectStalledFlights(flights: Flight[]): Flight[] {
   for (const flight of flights) {
     if (flight.state === 'crashed') continue;
     if (!AIRBORNE_STATES.has(flight.state) || STALL_EXEMPT_STATES.has(flight.state)) continue;
+    if (flight.speed > MAX_SPEED_KTS) {
+      flight.state = 'crashed';
+      flight.danger = true;
+      flight.statusMessage = `Overspeed - exceeded ${MAX_SPEED_KTS} kt and crashed`;
+      stalled.push(flight);
+      continue;
+    }
     if (flight.speed > 0) continue;
 
     flight.state = 'crashed';
@@ -55,6 +83,23 @@ export function detectStalledFlights(flights: Flight[]): Flight[] {
   }
 
   return stalled;
+}
+
+/** Airborne flights that reach zero altitude outside controlled landing have impacted the ground. */
+export function detectGroundImpacts(flights: Flight[]): Flight[] {
+  const impacted: Flight[] = [];
+
+  for (const flight of flights) {
+    if (flight.state === 'crashed' || !AIRBORNE_STATES.has(flight.state) || flight.state === 'landing') continue;
+    if (flight.altitude > 0) continue;
+
+    flight.state = 'crashed';
+    flight.danger = true;
+    flight.statusMessage = 'Ground impact - altitude reached zero';
+    impacted.push(flight);
+  }
+
+  return impacted;
 }
 
 export function isRunwayAvailable(flights: Flight[], commands: { action: string; callsign: string; target: string | number }[], runway: string, excludedCallsign: string): boolean {

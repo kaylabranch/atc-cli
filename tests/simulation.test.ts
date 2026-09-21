@@ -102,7 +102,7 @@ describe('simulation behavior', () => {
     expect(flight.speed).toBe(targetSpeed);
   });
 
-  it('completes a speed decrease faster than an equivalent increase', () => {
+  it('completes a speed decrease at 5 kt/s', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
     flight.speed = 300;
@@ -118,12 +118,29 @@ describe('simulation behavior', () => {
     expect(flight.speed).toBe(targetSpeed);
   });
 
-  it('rejects speed commands outside the min/max commandable range', () => {
+  it('accepts zero speed and crashes the flight when the command completes', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
 
-    expect(sim.handleCommand(`${flight.callsign} speed 50`).ok).toBe(false);
-    expect(sim.handleCommand(`${flight.callsign} speed 900`).ok).toBe(false);
+    expect(sim.handleCommand(`${flight.callsign} speed 0`).ok).toBe(true);
+    sim.step(100000);
+
+    expect(flight.speed).toBe(0);
+    expect(flight.state).toBe('crashed');
+    expect(flight.statusMessage).toBe('Stalled - lost airspeed and crashed');
+  });
+
+  it('accepts high speed and crashes the flight for overspeed', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    flight.speed = 600;
+
+    expect(sim.handleCommand(`${flight.callsign} speed 700`).ok).toBe(true);
+    sim.step(20000);
+
+    expect(flight.speed).toBe(700);
+    expect(flight.state).toBe('crashed');
+    expect(flight.statusMessage).toBe('Overspeed - exceeded 600 kt and crashed');
   });
 
   it('crashes an airborne flight that stalls at zero airspeed outside of a controlled landing', () => {
@@ -136,6 +153,18 @@ describe('simulation behavior', () => {
 
     expect(flight.state).toBe('crashed');
     expect(flight.statusMessage).toBe('Stalled - lost airspeed and crashed');
+  });
+
+  it('removes crashed flights from active flights and attention counters', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    flight.state = 'crashed';
+    flight.danger = true;
+
+    const board = sim.renderStatusBoard();
+
+    expect(board).toContain('Active flights: 2');
+    expect(board).toContain('Needs attention: 0');
   });
 
   it('accepts a new heading and applies the turn rate to command duration', () => {
@@ -207,7 +236,7 @@ describe('simulation behavior', () => {
 
     expect(help.ok).toBe(true);
     expect(help.message).toContain('<callsign> speed <knots>');
-    expect(help.message).toContain('120-600 kt');
+    expect(help.message).toContain('0+ kt');
     expect(help.message).toContain('<callsign> runway <77L|77R>');
     expect(help.message).toContain('Workflow');
     expect(help.message).toContain('Examples');

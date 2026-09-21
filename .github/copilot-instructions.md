@@ -32,7 +32,7 @@
 - Flight commands must use callsign-first order (`<callsign> <command> <value>`), matching real-world ATC phraseology; commands issued in the old command-first order are rejected with guidance to use the correct order.
 - Commands should be case-insensitive, and the simulation should handle invalid commands gracefully, providing appropriate feedback to the user.
 - There should be an indicator of the number of active flights in the simulation at any given time, and any flights needing attention or that have crashed should be clearly indicated to the user, as well as the number of flights completed.
-- `clear-to-land` starts a 15-second landing operation. The flight enters `landing` immediately, and altitude and speed decrease toward zero during the operation before it becomes `landed`.
+- `clear-to-land` starts a distance-based landing operation. The flight enters `landing` immediately, and altitude and speed decrease toward zero during the operation before it becomes `landed`.
 - A flight must have a completed runway assignment before `clear-to-land` is accepted.
 - A runway may be assigned to only one flight at a time. It is released when that flight begins taxiing to a gate and may then be reused.
 - `abort-landing` cancels an active landing and starts a climb/acceleration operation back toward the flight's pre-landing altitude and speed.
@@ -40,7 +40,8 @@
 - An airborne flight that reaches the edge of the grid (coordinate 0 or 30 on either axis) is flagged as lost and automatically redirected toward the airport.
 - Aircraft movement distance per tick scales with current speed; a faster flight covers more grid distance than a slower one over the same elapsed time.
 - An airborne flight (outside a controlled landing) that reaches zero airspeed stalls and crashes.
-- Speed commands are limited to a range (120-600 kt); commands outside that range are rejected.
+- Speed commands accept nonnegative values. An airborne flight that exceeds 600 kt crashes for overspeed, and zero airspeed causes a stall crash.
+- Flights below 80 kt or above 550 kt need attention. Below 110 kt, an airborne flight loses altitude as speed falls; zero altitude outside controlled landing causes ground impact. Crashed flights are excluded from active and attention counters.
 - When the game ends, the controller receives a career outcome based on the crashed-flight ratio: no crashes is a promotion, some but under half is a reprimand, half or more is a suspension, and losing every flight is termination.
 - A landed flight assigned a gate enters `taxiing` for 10 seconds, then becomes `gated` and unloads passengers for 10 seconds before being removed from the simulation.
 - The game ends when all 3 starting flights are completed or crashed. A flight is completed only after it is removed from the board. New-flight generation is out of scope for now.

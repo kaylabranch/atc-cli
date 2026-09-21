@@ -63,7 +63,7 @@
 4. Run `help` at any time to see the full in-app command reference. It's organized into:
 
    - **General** - `help`, `close-help`, `status`, `pause`, `resume`, `exit`.
-  - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, and `gate`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and changes at 5 kt/s).
+  - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, and `gate`, each annotated with its valid range or rate. Speed accepts nonnegative values and changes at 5 kt/s; zero speed stalls, and speeds above 600 kt cause overspeed crashes.
    - **Workflow** - the required order of operations for landing a flight: `runway` -> `clear-to-land` -> wait for `landed` -> `gate`.
    - **Tips** - how to read the `IN PROGRESS` list, what a red-highlighted flight means, and the `Tab` autocomplete shortcut.
    - **Examples** - ready-to-run sample commands.
@@ -110,9 +110,11 @@ The game ends when all three starting flights are completed or crashed. A flight
 
 Aircraft that come dangerously close together (within 3 grid units) are flagged as a conflict alert. If two flights collide (within 1 grid unit) while airborne, both are marked as crashed and are counted toward the end-of-game outcome. When the game ends, the dashboard shows a career outcome based on how many aircraft were lost: a perfect run earns a promotion, one loss earns a reprimand, losing half or more of the flights results in suspension, and losing every flight gets the controller fired.
 
+Flights below 80 kt or above 550 kt need attention. Below 110 kt, an airborne flight loses altitude as its speed falls. Reaching zero altitude outside a controlled landing causes ground impact. Crashed flights are removed from the active-flight and attention counters.
+
 An airborne flight that strays to the edge of the grid (coordinate 0 or 30 on either axis) is considered lost, is flagged for attention, and is automatically redirected back toward the airport.
 
-Movement distance each tick scales directly with a flight's current speed, so a flight at 1000 kt covers ground faster than one at 200 kt. Speed commands are limited to 120-600 kt. An airborne flight that reaches zero airspeed outside of a controlled landing stalls and crashes.
+Movement distance each tick scales directly with a flight's current speed, so a flight at 1000 kt covers ground faster than one at 200 kt. Speed commands accept nonnegative values. An airborne flight that reaches zero airspeed outside of a controlled landing stalls and crashes; exceeding 600 kt causes an overspeed crash.
 
 
 ## Project structure

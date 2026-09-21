@@ -29,7 +29,7 @@ export function renderHelp(): string {
     '',
     bold('Flight commands'),
     muted('Use callsign-first order, just like real ATC phraseology: <callsign> <command> <value>.'),
-    `  ${command('<callsign> speed <knots>')}Set target speed (120-600 kt); changes at 5 kt/s`,
+    `  ${command('<callsign> speed <knots>')}Set target speed (0+ kt); above 600 kt causes overspeed`,
     `  ${command('<callsign> heading <degrees>')}Set target heading (0-359°, 0=N); turns at 3°/s`,
     `  ${command('<callsign> altitude <feet>')}Set target altitude; climbs/descends at 250 ft/s`,
     `  ${command('<callsign> runway <77L|77R>')}Assign a runway; requires heading at the airport with decreasing speed and altitude`,
@@ -228,7 +228,7 @@ export function renderGameOverSummary(crashedFlights: number, totalFlights: numb
     : crashedFlights === totalFlights
       ? {
         label: 'TERMINATED',
-        message: `Every aircraft under your watch was lost (${crashedFlights}/${totalFlights}). You are fired, effective immediately.`,
+        message: `Every aircraft under your watch was lost (${crashedFlights}/${totalFlights}). This will be investigated.`,
       }
       : crashedFlights / totalFlights >= 0.5
         ? {
