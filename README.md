@@ -1,6 +1,10 @@
 # ✈️ ATC CLI Simulation
 
-[_Work in Progress_] A terminal-based Air Traffic Control simulation written in TypeScript and Node.js. The user controls flights from a command-line REPL, monitors their state, assigns runways and gates, and manages traffic in a simplified airport environment.
+A terminal-based Air Traffic Control simulation written in TypeScript and Node.js. The user controls flights from a command-line REPL, monitors their state, assigns runways and gates, and manages traffic in a simplified airport environment.
+
+<img width="1129" height="493" alt="ATC CLI screenshot 2" src="https://github.com/user-attachments/assets/1f44f282-7dcb-4d93-86ea-50a8357126df" />
+<img width="1108" height="465" alt="ATC CLI screenshot 5" src="https://github.com/user-attachments/assets/d32a0d3d-fe26-471d-9d9e-c91ec7fa1406" />
+<img width="1124" height="471" alt="ATC CLI screenshot 6" src="https://github.com/user-attachments/assets/f7154218-c917-40c2-b024-26903ae6dce2" />
 
 ## Features
 
@@ -13,6 +17,7 @@
 - Stall detection for airborne flights that lose all airspeed outside of a controlled landing
 - A career outcome (promotion, reprimand, suspension, or termination) once the game ends, based on flight outcome
 - Status board, airport layout, grid position map, and altitude cross-section, all refreshed in place
+- Logging generated after each session
 
 ## Tech stack
 
@@ -159,6 +164,8 @@ logs/
 - Departures and takeoffs are intentionally out of scope for this version.
 
 When the terminal session exits, controller commands and automatic flight outcomes are saved to a timestamped file in `logs/`. Entries are grouped by flight callsign and include accepted or rejected commands, state changes, crashes, landings, and completed flights. Logs are primarily useful for debugging in this case, but of course would be mandatory in a regulated environment.
+
+<img width="1647" height="972" alt="ATC CLI screenshot logs" src="https://github.com/user-attachments/assets/7c655ac6-0e2f-441b-9b06-622516a7f607" />
 
 ## Future Enhancements
 
