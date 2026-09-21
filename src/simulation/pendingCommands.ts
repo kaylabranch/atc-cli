@@ -15,6 +15,7 @@ export type PendingCommand = ActiveCommand & {
   durationMs: number;
   elapsedMs: number;
   motion?: Motion;
+  startValue?: number;
 };
 
 export class PendingCommands {
@@ -59,6 +60,9 @@ export class PendingCommands {
       durationMs,
       elapsedMs: 0,
       motion,
+      startValue: action === 'speed' || action === 'heading' || action === 'altitude'
+        ? action === 'speed' ? flight.speed : action === 'heading' ? flight.heading : flight.altitude
+        : undefined,
     });
     this.nextId += 1;
   }
@@ -73,6 +77,19 @@ export class PendingCommands {
           const ratio = command.progress / 100;
           flight.altitude = Math.round(command.motion.startAltitude + (command.motion.targetAltitude - command.motion.startAltitude) * ratio);
           flight.speed = Math.round(command.motion.startSpeed + (command.motion.targetSpeed - command.motion.startSpeed) * ratio);
+        }
+      } else if (command.startValue !== undefined) {
+        const flight = findFlight(command.callsign);
+        if (flight) {
+          const target = command.target as number;
+          const progressRatio = command.progress / 100;
+          const value = command.startValue + (target - command.startValue) * progressRatio;
+          if (command.action === 'speed') flight.speed = Math.round(value);
+          if (command.action === 'altitude') flight.altitude = Math.round(value);
+          if (command.action === 'heading') {
+            const turnDistance = ((target - command.startValue + 540) % 360) - 180;
+            flight.heading = (command.startValue + turnDistance * progressRatio + 360) % 360;
+          }
         }
       }
     }

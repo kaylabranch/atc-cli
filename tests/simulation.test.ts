@@ -64,7 +64,8 @@ describe('simulation behavior', () => {
     expect(sim.isCommandInProgress(flight.callsign, 'speed')).toBe(true);
 
     sim.step();
-    expect(sim.getFlight(flight.callsign)?.speed).toBe(initialSpeed);
+    expect(sim.getFlight(flight.callsign)?.speed).toBeGreaterThan(initialSpeed);
+    expect(sim.getFlight(flight.callsign)?.speed).toBeLessThan(targetSpeed);
 
     sim.step();
     sim.step();
