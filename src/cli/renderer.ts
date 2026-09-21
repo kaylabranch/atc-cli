@@ -69,28 +69,41 @@ export function renderAirportLayout(runways: number, gates: number): string {
 export function renderGridPositions(flights: Flight[]): string {
   const airborneFlights = flights.filter((flight) => flight.state !== 'landed' && flight.state !== 'taxiing' && flight.state !== 'gated');
   const cells = Array.from({ length: GRID_HEIGHT }, () => Array.from({ length: GRID_WIDTH }, () => ' '));
+  const crashCells = new Set<string>();
 
   const airportRow = Math.round((AIRPORT_Y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
   cells[airportRow][AIRPORT_X] = 'X';
 
   for (const [index, flight] of airborneFlights.entries()) {
-    const marker = String(index + 1);
+    const marker = flight.state === 'crashed' ? 'X' : String(index + 1);
     const x = Math.max(0, Math.min(GRID_WIDTH - 1, Math.round(flight.x)));
     const y = Math.max(0, Math.min(GRID_MAX_COORDINATE, Math.round(flight.y)));
     const row = Math.round((y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
+
     if (cells[row][x] === ' ') {
       cells[row][x] = marker;
     } else if (cells[row][x] !== 'X') {
-      cells[row][x] = '*';
+      if (flight.state === 'crashed' || cells[row][x] === '*') {
+        cells[row][x] = 'X';
+        crashCells.add(`${row}:${x}`);
+      } else {
+        cells[row][x] = '*';
+      }
+    }
+
+    if (flight.state === 'crashed') {
+      crashCells.add(`${row}:${x}`);
+      cells[row][x] = 'X';
     }
   }
 
   const border = `    +${'-'.repeat(GRID_WIDTH)}+`;
-  const gridLines = [bold('GRID POSITIONS'), muted('Legend: X=airport, *=multiple flights'), border];
+  const gridLines = [bold('GRID POSITIONS'), muted('Legend: X=airport/crash, *=multiple flights'), border];
 
   for (let row = GRID_HEIGHT - 1; row >= 0; row -= 1) {
     const y = Math.round((row / (GRID_HEIGHT - 1)) * GRID_MAX_COORDINATE);
-    gridLines.push(`${String(y).padStart(3)} |${cells[row].join('')}|`);
+    const renderedRow = cells[row].map((cell, col) => crashCells.has(`${row}:${col}`) ? danger(cell) : cell).join('');
+    gridLines.push(`${String(y).padStart(3)} |${renderedRow}|`);
   }
 
   gridLines.push(border, '      0         10        20        30');
@@ -101,21 +114,36 @@ export function renderGridPositions(flights: Flight[]): string {
 export function renderAltitudeChart(flights: Flight[]): string {
   const airborneFlights = flights.filter((flight) => flight.state !== 'landed' && flight.state !== 'taxiing' && flight.state !== 'gated');
   const chart = Array.from({ length: ALTITUDE_CHART_HEIGHT }, () => Array.from({ length: ALTITUDE_CHART_WIDTH + 1 }, () => ' '));
+  const crashCells = new Set<string>();
 
   for (const [index, flight] of airborneFlights.entries()) {
-    const marker = String(index + 1);
+    const marker = flight.state === 'crashed' ? 'X' : String(index + 1);
     const distance = Math.sqrt((flight.x - AIRPORT_X) ** 2 + (flight.y - AIRPORT_Y) ** 2);
     const chartDistance = Math.min(DISTANCE_CHART_MAX, Math.max(0, distance));
     const column = Math.round((chartDistance / DISTANCE_CHART_MAX) * ALTITUDE_CHART_WIDTH) + 1;
     const altitude = Math.min(ALTITUDE_CHART_MAX, Math.max(0, flight.altitude));
     const row = ALTITUDE_CHART_HEIGHT - 1 - Math.round((altitude / ALTITUDE_CHART_MAX) * (ALTITUDE_CHART_HEIGHT - 1));
-    chart[row][column] = chart[row][column] === ' ' ? marker : '*';
+
+    if (chart[row][column] === ' ') {
+      chart[row][column] = marker;
+    } else if (flight.state === 'crashed' || chart[row][column] === '*') {
+      chart[row][column] = 'X';
+      crashCells.add(`${row}:${column}`);
+    } else {
+      chart[row][column] = '*';
+    }
+
+    if (flight.state === 'crashed') {
+      crashCells.add(`${row}:${column}`);
+      chart[row][column] = 'X';
+    }
   }
 
   const lines = [bold('ALTITUDE CROSS-SECTION'), muted('Height vs. distance from airport'), `     ${'-'.repeat(ALTITUDE_CHART_WIDTH + 1)}`];
   for (let row = 0; row < ALTITUDE_CHART_HEIGHT; row += 1) {
     const altitude = Math.round(ALTITUDE_CHART_MAX - (row / (ALTITUDE_CHART_HEIGHT - 1)) * ALTITUDE_CHART_MAX);
-    lines.push(`${String(altitude).padStart(5)} |${chart[row].join('')}`);
+    const renderedRow = chart[row].map((cell, col) => crashCells.has(`${row}:${col}`) ? danger(cell) : cell).join('');
+    lines.push(`${String(altitude).padStart(5)} |${renderedRow}`);
   }
   lines.push(`      +${'-'.repeat(ALTITUDE_CHART_WIDTH)}>`);
   lines.push(renderDistanceAxisLabels());

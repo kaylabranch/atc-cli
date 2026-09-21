@@ -220,10 +220,31 @@ describe('simulation behavior', () => {
     const flights = sim.getFlights();
 
     expect(grid).toContain('GRID POSITIONS');
-    expect(grid).toContain('Legend: X=airport, *=multiple flights');
+    expect(grid).toContain('Legend: X=airport/crash, *=multiple flights');
     expect(grid).toContain('X');
     expect(grid).toContain('1');
     expect(grid).toContain(`+${'-'.repeat(31)}+`);
+  });
+
+  it('renders crashed flights as a crash marker instead of a generic overlap symbol', () => {
+    const sim = new Simulation();
+    const [firstFlight, secondFlight] = sim.getFlights();
+
+    firstFlight.x = 10;
+    firstFlight.y = 10;
+    firstFlight.state = 'crashed';
+    firstFlight.danger = true;
+    secondFlight.x = 10;
+    secondFlight.y = 10;
+    secondFlight.state = 'crashed';
+    secondFlight.danger = true;
+
+    const grid = renderGridPositions(sim.getFlights());
+    const gridCells = [...grid.matchAll(/\|([^|]*)\|/g)].map((match) => match[1]).join('');
+
+    expect(grid).toContain('Legend: X=airport/crash, *=multiple flights');
+    expect(gridCells).not.toContain('*');
+    expect(gridCells).toContain('X');
   });
 
   it('rounds displayed progress to whole percentages', () => {
