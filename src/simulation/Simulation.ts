@@ -250,6 +250,9 @@ export class Simulation {
     const normalizedGate = gate.toUpperCase();
     if (!/^A[1-3]$/.test(normalizedGate)) return { ok: false, message: 'Gate must be A1, A2, or A3.' };
     if (flight.state !== 'landed') return { ok: false, message: `${flight.callsign} must be landed before gate assignment.` };
+    if (!this.isGateAvailable(normalizedGate, flight.callsign)) {
+      return { ok: false, message: `Gate ${normalizedGate} is currently occupied.` };
+    }
 
     return this.queueCommand(flight, 'gate', normalizedGate, `Gate assignment ${normalizedGate}`, 2000);
   }
@@ -371,6 +374,21 @@ export class Simulation {
 
     this.pendingCommands.add(flight, action, target, description, durationMs, motion);
     return { ok: true, message: `Command accepted for ${flight.callsign}: ${description}.` };
+  }
+
+  private isGateAvailable(gate: string, excludedCallsign: string): boolean {
+    const assignedToOtherFlight = this.flights.some(
+      (flight) => flight.callsign.toLowerCase() !== excludedCallsign.toLowerCase()
+        && flight.gate?.toUpperCase() === gate
+        && flight.state !== 'crashed',
+    );
+    const pendingForOtherFlight = this.pendingCommands.all.some(
+      (command) => command.action === 'gate'
+        && command.callsign.toLowerCase() !== excludedCallsign.toLowerCase()
+        && String(command.target).toUpperCase() === gate,
+    );
+
+    return !assignedToOtherFlight && !pendingForOtherFlight;
   }
 
   private checkGameOver(): void {

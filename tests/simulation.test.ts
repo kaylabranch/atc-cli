@@ -494,6 +494,20 @@ describe('simulation behavior', () => {
     expect(sim.renderStatusBoard()).toContain('Completed: 1');
   });
 
+  it('prevents assigning the same gate to multiple flights', () => {
+    const sim = new Simulation();
+    const [firstFlight, secondFlight] = sim.getFlights();
+    firstFlight.state = 'landed';
+    secondFlight.state = 'landed';
+
+    expect(sim.handleCommand(`${firstFlight.callsign} gate A1`).ok).toBe(true);
+    expect(sim.handleCommand(`${secondFlight.callsign} gate A1`).ok).toBe(false);
+    expect(sim.handleCommand(`${secondFlight.callsign} gate A1`).message).toContain('Gate A1 is currently occupied');
+
+    sim.step(2000);
+    expect(sim.handleCommand(`${secondFlight.callsign} gate A1`).ok).toBe(false);
+  });
+
   it('starts with three flights and ends when all three complete', () => {
     const sim = new Simulation();
     const flights = sim.getFlights();
