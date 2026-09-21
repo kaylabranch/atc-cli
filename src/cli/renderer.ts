@@ -36,7 +36,7 @@ export function renderHelp(): string {
     `  ${command('<callsign> clear-to-land')}Begin a 15s landing; requires a completed runway assignment`,
     `  ${command('<callsign> abort-landing')}Cancel an active landing and climb back to altitude and speed`,
     `  ${command('<callsign> gate <A1|A2|A3>')}Assign a gate once landed; taxis 10s, then unloads 10s`,
-    `  ${command('<callsign> hold <left|right>')}Enter a holding pattern`,
+    `  ${command('<callsign> hold <left|right>')}Enter an airborne holding pattern; currently follows its heading`,
     '',
     bold('Workflow'),
     `  ${warning('runway')} -> ${warning('clear-to-land')} -> wait for "landed" -> ${warning('gate')}`,
@@ -68,12 +68,13 @@ export function renderAirportLayout(runways: number, gates: number): string {
 }
 
 export function renderGridPositions(flights: Flight[]): string {
+  const airborneFlights = flights.filter((flight) => flight.state !== 'landed' && flight.state !== 'taxiing' && flight.state !== 'gated');
   const cells = Array.from({ length: GRID_HEIGHT }, () => Array.from({ length: GRID_WIDTH }, () => ' '));
 
   const airportRow = Math.round((AIRPORT_Y / GRID_MAX_COORDINATE) * (GRID_HEIGHT - 1));
   cells[airportRow][AIRPORT_X] = 'X';
 
-  for (const [index, flight] of flights.entries()) {
+  for (const [index, flight] of airborneFlights.entries()) {
     const marker = String(index + 1);
     const x = Math.max(0, Math.min(GRID_WIDTH - 1, Math.round(flight.x)));
     const y = Math.max(0, Math.min(GRID_MAX_COORDINATE, Math.round(flight.y)));
@@ -99,9 +100,10 @@ export function renderGridPositions(flights: Flight[]): string {
 }
 
 export function renderAltitudeChart(flights: Flight[]): string {
+  const airborneFlights = flights.filter((flight) => flight.state !== 'landed' && flight.state !== 'taxiing' && flight.state !== 'gated');
   const chart = Array.from({ length: ALTITUDE_CHART_HEIGHT }, () => Array.from({ length: ALTITUDE_CHART_WIDTH + 1 }, () => ' '));
 
-  for (const [index, flight] of flights.entries()) {
+  for (const [index, flight] of airborneFlights.entries()) {
     const marker = String(index + 1);
     const distance = Math.sqrt((flight.x - AIRPORT_X) ** 2 + (flight.y - AIRPORT_Y) ** 2);
     const chartDistance = Math.min(DISTANCE_CHART_MAX, Math.max(0, distance));

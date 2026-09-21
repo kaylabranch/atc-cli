@@ -288,6 +288,8 @@ export class Simulation {
         targetSpeed: 0,
       },
     );
+    if (!result.ok) return result;
+
     flight.state = 'landing';
     flight.statusMessage = 'Landing in progress';
     flight.danger = false;
@@ -341,6 +343,10 @@ export class Simulation {
     durationMs: number,
     motion?: Motion,
   ): CommandResult {
+    if (this.pendingCommands.isInProgress(flight.callsign, action)) {
+      return { ok: false, message: `${flight.callsign} already has a ${action} command in progress.` };
+    }
+
     this.pendingCommands.add(flight, action, target, description, durationMs, motion);
     return { ok: true, message: `Command accepted for ${flight.callsign}: ${description}.` };
   }

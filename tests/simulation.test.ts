@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { progressBar } from '../src/cli/color.js';
 import { completeCallsign, parseCommand } from '../src/cli/commandParser.js';
+import { renderAltitudeChart, renderGridPositions } from '../src/cli/renderer.js';
 import { AIRPORT_X, AIRPORT_Y } from '../src/simulation/constants.js';
 import { Simulation } from '../src/simulation/Simulation.js';
 
@@ -67,6 +68,18 @@ describe('simulation behavior', () => {
     sim.step();
     expect(sim.getFlight(flight.callsign)?.speed).toBe(targetSpeed);
     expect(sim.getActiveCommands()).toHaveLength(0);
+  });
+
+  it('rejects a duplicate command while the same action is in progress', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+
+    expect(sim.handleCommand(`${flight.callsign} speed 240`).ok).toBe(true);
+    const duplicate = sim.handleCommand(`${flight.callsign} speed 260`);
+
+    expect(duplicate.ok).toBe(false);
+    expect(duplicate.message).toContain('already has a speed command in progress');
+    expect(sim.getActiveCommands()).toHaveLength(1);
   });
 
   it('uses elapsed time for a large speed increase, which completes slower than an equivalent decrease', () => {
@@ -149,6 +162,22 @@ describe('simulation behavior', () => {
 
     expect(dashboard).toContain('ALTITUDE CROSS-SECTION');
     expect(dashboard).toContain('distance from airport');
+  });
+
+  it('excludes landed, taxiing, and gated flights from spatial charts', () => {
+    const sim = new Simulation();
+    const flights = sim.getFlights();
+    flights[0].state = 'landed';
+    flights[1].state = 'taxiing';
+    flights[2].state = 'gated';
+
+    const grid = renderGridPositions(flights);
+    const altitudeChart = renderAltitudeChart(flights);
+    const gridCells = [...grid.matchAll(/\|([^|]*)\|/g)].map((match) => match[1]).join('');
+    const altitudeCells = [...altitudeChart.matchAll(/^[ \t]*\d+[ \t]+\|([^\r\n|]*)$/gm)].map((match) => match[1]).join('');
+
+    expect(gridCells).not.toMatch(/[123*]/);
+    expect(altitudeCells).not.toMatch(/[123*]/);
   });
 
   it('renders a visual grid with the airport and flight markers', () => {

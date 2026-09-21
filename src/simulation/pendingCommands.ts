@@ -38,6 +38,12 @@ export class PendingCommands {
     return this.commands.find(predicate);
   }
 
+  isInProgress(callsign: string, action: PendingAction): boolean {
+    return this.commands.some((command) =>
+      command.callsign.toLowerCase() === callsign.toLowerCase() && command.action === action
+    );
+  }
+
   remove(command: PendingCommand): void {
     this.commands = this.commands.filter((candidate) => candidate !== command);
   }
