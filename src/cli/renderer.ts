@@ -36,7 +36,6 @@ export function renderHelp(): string {
     `  ${command('<callsign> clear-to-land')}Begin landing at 2s per grid unit; requires a runway and approach within 10 grid units`,
     `  ${command('<callsign> abort-landing')}Cancel an active landing and climb back to altitude and speed`,
     `  ${command('<callsign> gate <A1|A2|A3>')}Assign a gate once landed; taxis 10s, then unloads 10s`,
-    `  ${command('<callsign> hold <left|right>')}Enter an airborne holding pattern; currently follows its heading`,
     '',
     bold('Workflow'),
     `  ${warning('runway')} -> ${warning('clear-to-land')} -> wait for "landed" -> ${warning('gate')}`,
@@ -172,7 +171,7 @@ export function renderStatusBoard(flights: Flight[], activeFlights: number, dang
     const stateText =
       flight.danger ? danger(stateValue) :
         flight.state === 'landed' || flight.state === 'gated' ? success(stateValue) :
-          flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(stateValue) :
+          flight.state === 'approach' || flight.state === 'landing' ? warning(stateValue) :
             info(stateValue);
 
     const runwayText = (flight.runway ?? '-').padStart(6);
@@ -204,7 +203,7 @@ export function renderFlightDetail(flight: Flight): string {
   const stateText =
     flight.danger ? danger(flight.state.toUpperCase()) :
       flight.state === 'landed' || flight.state === 'gated' ? success(flight.state.toUpperCase()) :
-        flight.state === 'holding' || flight.state === 'approach' || flight.state === 'landing' ? warning(flight.state.toUpperCase()) :
+        flight.state === 'approach' || flight.state === 'landing' ? warning(flight.state.toUpperCase()) :
           info(flight.state.toUpperCase());
 
   return [

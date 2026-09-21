@@ -17,7 +17,7 @@
 - There is a command line interface (CLI) that allows the user to interact with the simulation, including issuing commands to the flights and viewing their status.
 - The simulation should provide feedback to the user on the status of the flights, including their current state, position, and any instructions that have been issued.
 - If flights collide, are too close, or crash, the simulation should provide appropriate feedback to the user and handle the situation gracefully.
-- User commands should allow speed, heading, altitude, gate assignment, clearing to land, holding in a pattern, and runway assignment to be changed for each flight.
+- User commands should allow speed, heading, altitude, gate assignment, clearing to land, and runway assignment to be changed for each flight.
 - Controller commands are represented as pending operations with progress bars in a separate `IN PROGRESS` list. Do not put progress bars on individual flights.
 - A command changes a flight only when its pending operation completes. Ticks must not move aircraft autonomously.
 - Speed changes use a rate of 5 knots per second in either direction; this is a completion rate, not an input-size validation limit.

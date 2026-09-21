@@ -5,7 +5,7 @@
 ## Features
 
 - Command-line REPL for controlling 3 randomly generated flights with unique callsigns
-- Speed, heading, altitude, gate, runway, clear-to-land, abort-landing, and hold commands, each represented as a pending operation with a progress bar
+- Speed, heading, altitude, gate, runway, clear-to-land, and abort-landing commands, each represented as a pending operation with a progress bar
 - Runway assignment validation with a detailed rejection message calling out exactly which condition (heading, speed trend, altitude trend) is unmet
 - Full landing lifecycle: runway assignment, clearance to land, taxi to gate, and passenger unload before a flight leaves the board
 - Conflict alerts for flights that stray too close together, and mid-air collisions for flights that get even closer
@@ -55,7 +55,6 @@
    UAL123 gate A1
    UAL123 runway 77L
    UAL123 clear-to-land
-   UAL123 hold left
    pause
    resume
    exit
@@ -64,7 +63,7 @@
 4. Run `help` at any time to see the full in-app command reference. It's organized into:
 
    - **General** - `help`, `close-help`, `status`, `pause`, `resume`, `exit`.
-  - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, `gate`, and `hold`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and changes at 5 kt/s).
+  - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, and `gate`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and changes at 5 kt/s).
    - **Workflow** - the required order of operations for landing a flight: `runway` -> `clear-to-land` -> wait for `landed` -> `gate`.
    - **Tips** - how to read the `IN PROGRESS` list, what a red-highlighted flight means, and the `Tab` autocomplete shortcut.
    - **Examples** - ready-to-run sample commands.
@@ -87,10 +86,9 @@ Flight instructions use callsign-first commands:
   UAL123 runway 77L
   UAL123 clear-to-land
   UAL123 abort-landing
-  UAL123 hold left
   ```
 
-To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Type a command prefix to filter it, such as `UAL123 h` for `heading` and `hold`, or `UAL123 hea` for `heading`. Press `Enter` or `Tab` to accept the highlighted match; the command is inserted into the prompt with a trailing space, ready for its value.
+To choose a flight command without typing its name, enter a callsign followed by a space, such as `UAL123 `. A compact popup appears below the prompt. Type a command prefix to filter it, such as `UAL123 h` or `UAL123 hea` for `heading`. Press `Enter` or `Tab` to accept the highlighted match; the command is inserted into the prompt with a trailing space, ready for its value.
 
 ## Details
 

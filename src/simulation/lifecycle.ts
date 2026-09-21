@@ -61,10 +61,6 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
       flight.state = 'approach';
       flight.statusMessage = 'Landing aborted - returning to approach';
       break;
-    case 'hold':
-      flight.state = 'holding';
-      flight.statusMessage = `Holding ${command.target as string} pattern`;
-      break;
     case 'unload':
       context.markCompleted(flight.callsign);
       context.flights.splice(context.flights.indexOf(flight), 1);

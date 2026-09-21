@@ -1,6 +1,6 @@
 import type { CommandResult } from '../types.js';
 
-const FLIGHT_COMMANDS = new Set(['speed', 'heading', 'altitude', 'gate', 'runway', 'clear-to-land', 'abort-landing', 'hold']);
+const FLIGHT_COMMANDS = new Set(['speed', 'heading', 'altitude', 'gate', 'runway', 'clear-to-land', 'abort-landing']);
 
 export interface ParsedCommand {
   action: string;

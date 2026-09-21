@@ -137,8 +137,6 @@ export class Simulation {
         return this.handleClearToLand(args);
       case 'abort-landing':
         return this.handleAbortLanding(args);
-      case 'hold':
-        return this.handleHold(args);
       case 'pause':
         this.paused = true;
         return { ok: true, message: 'Simulation paused.' };
@@ -357,15 +355,6 @@ export class Simulation {
     flight.altitudeTrend = 'increasing';
     flight.statusMessage = 'Landing aborted - climbing';
     return result;
-  }
-
-  private handleHold(args: string[]): CommandResult {
-    if (args.length < 2) return { ok: false, message: 'Usage: <callsign> hold <left|right>' };
-    const [callsign, side] = args;
-    const flight = this.getFlight(callsign);
-    if (!flight) return { ok: false, message: `No flight found with callsign ${callsign}.` };
-
-    return this.queueCommand(flight, 'hold', side, `Hold ${side} pattern`, 2000);
   }
 
   private queueCommand(

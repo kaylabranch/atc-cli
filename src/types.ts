@@ -1,6 +1,5 @@
 export type FlightState =
   | 'approach'
-  | 'holding'
   | 'climbing'
   | 'descending'
   | 'landing'

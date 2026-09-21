@@ -35,7 +35,6 @@ const flightCommands = [
   { command: 'runway', usage: '77L|77R' },
   { command: 'clear-to-land', usage: '' },
   { command: 'abort-landing', usage: '' },
-  { command: 'hold', usage: 'left|right' },
 ];
 const rl = readline.createInterface({
   input: process.stdin,

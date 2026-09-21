@@ -16,7 +16,7 @@ export function generateFlights(): Flight[] {
       heading: Math.round(Math.random() * 360),
       x: Math.round(Math.random() * 30),
       y: Math.round(Math.random() * 30),
-      state: index % 2 === 0 ? 'approach' : 'holding',
+      state: 'approach',
       statusMessage: 'Tracking inbound traffic',
       danger: false,
       speedTrend: 'steady',

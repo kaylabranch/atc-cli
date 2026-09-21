@@ -129,7 +129,7 @@ describe('simulation behavior', () => {
   it('crashes an airborne flight that stalls at zero airspeed outside of a controlled landing', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
-    flight.state = 'holding';
+    flight.state = 'approach';
     flight.speed = 0;
 
     sim.step();

@@ -1,6 +1,6 @@
 import type { ActiveCommand, Flight } from '../types.js';
 
-export type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'abort-landing' | 'hold' | 'taxi-to-gate' | 'unload';
+export type PendingAction = 'speed' | 'heading' | 'altitude' | 'gate' | 'runway' | 'clear-to-land' | 'abort-landing' | 'taxi-to-gate' | 'unload';
 
 export type Motion = {
   startAltitude: number;
