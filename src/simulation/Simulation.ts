@@ -347,6 +347,8 @@ export class Simulation {
       },
     );
     flight.state = 'climbing';
+    flight.speedTrend = 'increasing';
+    flight.altitudeTrend = 'increasing';
     flight.statusMessage = 'Landing aborted - climbing';
     return result;
   }

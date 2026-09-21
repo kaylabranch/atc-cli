@@ -436,6 +436,8 @@ describe('simulation behavior', () => {
     const abortResult = sim.handleCommand(`${flight.callsign} abort-landing`);
     expect(abortResult.ok).toBe(true);
     expect(flight.state).toBe('climbing');
+    expect(flight.speedTrend).toBe('increasing');
+    expect(flight.altitudeTrend).toBe('increasing');
 
     sim.step(7500);
     expect(flight.altitude).toBeGreaterThan(0);
