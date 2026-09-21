@@ -256,6 +256,20 @@ describe('simulation behavior', () => {
     expect(sim.handleCommand(`${flight.callsign} runway 77L`).ok).toBe(true);
   });
 
+  it('keeps completed decreasing speed and altitude commands eligible for runway assignment', () => {
+    const sim = new Simulation();
+    const flight = sim.getFlights()[0];
+    prepareForRunway(flight);
+
+    expect(sim.handleCommand(`${flight.callsign} speed ${flight.speed - 10}`).ok).toBe(true);
+    expect(sim.handleCommand(`${flight.callsign} altitude ${flight.altitude - 1000}`).ok).toBe(true);
+    sim.step(10000);
+
+    expect(flight.speedTrend).toBe('decreasing');
+    expect(flight.altitudeTrend).toBe('decreasing');
+    expect(sim.handleCommand(`${flight.callsign} runway 77L`).ok).toBe(true);
+  });
+
   it('requires a flight to be within 10 grid units of the airport for landing clearance', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];

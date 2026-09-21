@@ -17,7 +17,7 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
 
   switch (command.action) {
     case 'speed':
-      flight.speedTrend = trendOf(flight.speed, command.target as number);
+      flight.speedTrend = trendOf(command.startValue ?? flight.speed, command.target as number);
       flight.speed = command.target as number;
       flight.statusMessage = `Speed adjusted to ${flight.speed} kt`;
       break;
@@ -26,7 +26,7 @@ export function applyPendingCommand(command: PendingCommand, context: LifecycleC
       flight.statusMessage = `Heading adjusted to ${flight.heading}°`;
       break;
     case 'altitude':
-      flight.altitudeTrend = trendOf(flight.altitude, command.target as number);
+      flight.altitudeTrend = trendOf(command.startValue ?? flight.altitude, command.target as number);
       flight.altitude = command.target as number;
       flight.statusMessage = `Altitude adjusted to ${flight.altitude} ft`;
       break;
