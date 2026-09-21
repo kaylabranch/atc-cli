@@ -20,7 +20,7 @@
 - User commands should allow speed, heading, altitude, gate assignment, clearing to land, holding in a pattern, and runway assignment to be changed for each flight.
 - Controller commands are represented as pending operations with progress bars in a separate `IN PROGRESS` list. Do not put progress bars on individual flights.
 - A command changes a flight only when its pending operation completes. Ticks must not move aircraft autonomously.
-- Speed changes use a rate of 5 knots per second when decreasing and 2.5 knots per second when increasing; this is a completion rate, not an input-size validation limit.
+- Speed changes use a rate of 5 knots per second in either direction; this is a completion rate, not an input-size validation limit.
 - Heading changes use a turn rate of 3 degrees per second; this is a completion rate, not an input-size validation limit.
 - Command progress must use measured elapsed time between ticks, not assumed callback timing.
 - Displayed numeric values, including altitude, speed, heading, coordinates, and percentages, should be rounded to whole numbers.

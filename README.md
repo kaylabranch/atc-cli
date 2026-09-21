@@ -64,7 +64,7 @@
 4. Run `help` at any time to see the full in-app command reference. It's organized into:
 
    - **General** - `help`, `close-help`, `status`, `pause`, `resume`, `exit`.
-   - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, `gate`, and `hold`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and decreases at 5 kt/s but only increases at 2.5 kt/s).
+  - **Flight commands** - usage for `speed`, `heading`, `altitude`, `runway`, `clear-to-land`, `abort-landing`, `gate`, and `hold`, each annotated with its valid range or rate (for example, `speed` accepts `120-600 kt` and changes at 5 kt/s).
    - **Workflow** - the required order of operations for landing a flight: `runway` -> `clear-to-land` -> wait for `landed` -> `gate`.
    - **Tips** - how to read the `IN PROGRESS` list, what a red-highlighted flight means, and the `Tab` autocomplete shortcut.
    - **Examples** - ready-to-run sample commands.
@@ -104,7 +104,7 @@ A flight must be pointed toward the airport and must have completed both a decre
 
 Only one flight may occupy a runway at a time. A runway is released when its flight begins taxiing to a gate and can then be assigned to another flight.
 
-Command progress uses measured elapsed time between ticks. For example, decreasing speed by 100 knots at 5 knots per second takes 20 seconds, while increasing speed by the same amount at 2.5 knots per second takes 40 seconds, even if a display tick is delayed.
+Command progress uses measured elapsed time between ticks. For example, changing speed by 100 knots at 5 knots per second takes 20 seconds, even if a display tick is delayed.
 
 When running in an interactive terminal, the dashboard refreshes in place and keeps the current command line intact while controller commands are in progress. Commands are applied to a flight only when their progress reaches 100%. After landing, assign a gate; the aircraft taxis to that gate for 10 seconds, then unloads passengers for 10 seconds before leaving the simulation.
 
@@ -143,7 +143,8 @@ tests/
 ## Notes
 
 - Climb and descent rates are modeled at 250 ft/s.
-- Speed commands complete at a rate of 5 knots per second when decreasing and 2.5 knots per second when increasing.
+- Speed commands complete at a rate of 5 knots per second in either direction.
+- Airborne movement is displayed at 1.5 times the base speed conversion.
 - Heading commands complete at a turn rate of 3 degrees per second.
 - Departures and takeoffs are intentionally out of scope for this version.
 

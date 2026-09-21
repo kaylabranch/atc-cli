@@ -86,18 +86,18 @@ describe('simulation behavior', () => {
     expect(sim.getActiveCommands()).toHaveLength(1);
   });
 
-  it('uses elapsed time for a large speed increase, which completes slower than an equivalent decrease', () => {
+  it('uses elapsed time for a large speed increase at 5 kt/s', () => {
     const sim = new Simulation();
     const flight = sim.getFlights()[0];
     const targetSpeed = flight.speed + 100;
 
     sim.handleCommand(`${flight.callsign} speed ${targetSpeed}`);
-    sim.step(20000);
+    sim.step(10000);
 
     expect(sim.getActiveCommands()[0].progress).toBeCloseTo(50);
     expect(flight.speed).not.toBe(targetSpeed);
 
-    sim.step(20000);
+    sim.step(10000);
     expect(flight.speed).toBe(targetSpeed);
   });
 
@@ -399,7 +399,7 @@ describe('simulation behavior', () => {
     flight.speed = 3600;
     sim.step(1000);
 
-    expect(flight.x).toBeCloseTo(initialPosition.x + 1);
+    expect(flight.x).toBeCloseTo(initialPosition.x + 1.5);
     expect(flight.y).toBeCloseTo(initialPosition.y);
   });
 

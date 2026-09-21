@@ -29,7 +29,7 @@ export function renderHelp(): string {
     '',
     bold('Flight commands'),
     muted('Use callsign-first order, just like real ATC phraseology: <callsign> <command> <value>.'),
-    `  ${command('<callsign> speed <knots>')}Set target speed (120-600 kt); decreases at 5 kt/s, increases at 2.5 kt/s`,
+    `  ${command('<callsign> speed <knots>')}Set target speed (120-600 kt); changes at 5 kt/s`,
     `  ${command('<callsign> heading <degrees>')}Set target heading (0-359°, 0=N); turns at 3°/s`,
     `  ${command('<callsign> altitude <feet>')}Set target altitude; climbs/descends at 250 ft/s`,
     `  ${command('<callsign> runway <77L|77R>')}Assign a runway; requires heading at the airport with decreasing speed and altitude`,
